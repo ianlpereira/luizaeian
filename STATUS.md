@@ -40,7 +40,27 @@ _Nenhum épico em andamento no momento._
 
 ---
 
-## 📋 Backlog
+## 📋 Site de Casamento "Luiza e Ian"
+
+> Produto paralelo documentado em `docs/`. Stack: React + Vite + TypeScript + Supabase + Vercel.
+> Todos os épicos planejados — aguardando início da implementação.
+
+### Épicos Planejados
+
+| # | Épico | Arquivo | Status |
+|---|---|---|---|
+| 1 | Foundation & Setup | `docs/EPIC-1-PLANNING.md` | 🔲 Planejado |
+| 2 | Apresentação e Identidade Visual | `docs/EPIC-2-PLANNING.md` | 🔲 Planejado |
+| 3 | Logística e Geolocalização | `docs/EPIC-3-PLANNING.md` | 🔲 Planejado |
+| 4 | Lista de Presentes | `docs/EPIC-4-PLANNING.md` | 🔲 Planejado |
+| 5 | Engajamento (RSVP & Mural) | `docs/EPIC-5-PLANNING.md` | 🔲 Planejado |
+
+**Documentação completa:** `docs/DOCS-INDEX.md`
+**Roadmap:** `docs/ROADMAP.md`
+
+---
+
+## 📋 Backlog — Monorepo Geral
 
 _A definir pelo Product Manager / Engineering Manager._
 
