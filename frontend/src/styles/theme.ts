@@ -1,31 +1,59 @@
 export const theme = {
   colors: {
-    primary: '#1677ff',
-    primaryHover: '#4096ff',
-    primaryActive: '#0958d9',
+    primary: '#c9a96e',         // dourado principal
+    primaryHover: '#b8943a',    // dourado escuro (hover)
+    primaryLight: '#e8d5b0',    // dourado claro
 
-    secondary: '#722ed1',
+    secondary: '#e8b4b8',       // rosê gold
+    secondaryLight: '#f5e6d3',  // rosê claro
 
-    background: '#f5f5f5',
+    background: '#faf9f7',      // off-white elegante
     surface: '#ffffff',
-    surfaceHover: '#fafafa',
+    surfaceAlt: '#f5f0e8',      // superfície levemente quente
 
     text: {
-      primary: '#1a1a1a',
-      secondary: '#595959',
-      disabled: '#bfbfbf',
+      primary: '#2c2c2c',
+      secondary: '#7a7a7a',
+      muted: '#b0a898',
       inverse: '#ffffff',
     },
 
-    border: '#d9d9d9',
-    borderLight: '#f0f0f0',
-
-    success: '#52c41a',
-    warning: '#faad14',
-    error: '#ff4d4f',
-    info: '#1677ff',
+    border: '#e8e0d6',
+    borderLight: '#f0ebe3',
 
     overlay: 'rgba(0, 0, 0, 0.45)',
+    overlayLight: 'rgba(0, 0, 0, 0.25)',
+
+    success: '#7cb87a',
+    error: '#c97070',
+  },
+
+  typography: {
+    fontFamily: {
+      serif: "'Playfair Display', Georgia, 'Times New Roman', serif",
+      sans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    },
+    fontSize: {
+      xs: '12px',
+      sm: '14px',
+      md: '16px',
+      lg: '20px',
+      xl: '28px',
+      xxl: '40px',
+      hero: '56px',
+    },
+    fontWeight: {
+      light: 300,
+      regular: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+    },
+    lineHeight: {
+      tight: '1.2',
+      normal: '1.5',
+      relaxed: '1.75',
+    },
   },
 
   spacing: {
@@ -33,56 +61,42 @@ export const theme = {
     sm: '8px',
     md: '16px',
     lg: '24px',
-    xl: '32px',
-    xxl: '48px',
+    xl: '48px',
+    xxl: '80px',
+    section: '120px',
   },
 
   borderRadius: {
     sm: '4px',
     md: '8px',
-    lg: '12px',
-    xl: '16px',
+    lg: '16px',
+    xl: '24px',
     round: '50%',
-  },
-
-  typography: {
-    fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-    fontSize: {
-      xs: '12px',
-      sm: '14px',
-      md: '16px',
-      lg: '20px',
-      xl: '24px',
-      xxl: '32px',
-    },
-    fontWeight: {
-      regular: 400,
-      medium: 500,
-      semibold: 600,
-      bold: 700,
-    },
-    lineHeight: {
-      tight: '1.25',
-      normal: '1.5',
-      relaxed: '1.75',
-    },
+    pill: '999px',
   },
 
   shadows: {
-    sm: '0 1px 2px rgba(0, 0, 0, 0.05)',
-    md: '0 4px 6px rgba(0, 0, 0, 0.07)',
-    lg: '0 10px 15px rgba(0, 0, 0, 0.1)',
-    xl: '0 20px 25px rgba(0, 0, 0, 0.1)',
+    sm: '0 1px 3px rgba(0, 0, 0, 0.08)',
+    md: '0 4px 12px rgba(0, 0, 0, 0.08)',
+    lg: '0 8px 24px rgba(0, 0, 0, 0.10)',
+    xl: '0 16px 40px rgba(0, 0, 0, 0.12)',
+    golden: '0 4px 20px rgba(201, 169, 110, 0.25)',
   },
 
+  // Mobile-first: breakpoints em min-width
   breakpoints: {
-    xs: '480px',
-    sm: '576px',
-    md: '768px',
-    lg: '992px',
-    xl: '1200px',
-    xxl: '1600px',
+    xs: '360px',   // small phones
+    sm: '390px',   // iPhone 14/15
+    md: '414px',   // large phones
+    lg: '768px',   // tablet portrait
+    xl: '1024px',  // tablet landscape / small desktop
+    xxl: '1440px', // desktop
+  },
+
+  transitions: {
+    fast: '150ms ease',
+    normal: '300ms ease',
+    slow: '500ms ease',
   },
 } as const
 

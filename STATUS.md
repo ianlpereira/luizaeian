@@ -49,7 +49,7 @@ _Nenhum épico em andamento no momento._
 
 | # | Épico | Arquivo | Status |
 |---|---|---|---|
-| 1 | Foundation & Setup | `docs/EPIC-1-PLANNING.md` | 🔲 Planejado |
+| 1 | Foundation & Setup | `docs/EPIC-1-PLANNING.md` | ✅ Completo |
 | 2 | Apresentação e Identidade Visual | `docs/EPIC-2-PLANNING.md` | 🔲 Planejado |
 | 3 | Logística e Geolocalização | `docs/EPIC-3-PLANNING.md` | 🔲 Planejado |
 | 4 | Lista de Presentes | `docs/EPIC-4-PLANNING.md` | 🔲 Planejado |

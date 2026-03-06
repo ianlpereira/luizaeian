@@ -1,22 +1,15 @@
-import { Button, Result } from 'antd'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import * as S from './styles'
 
 export function NotFoundPage() {
-  const navigate = useNavigate()
-
   return (
     <S.Container>
-      <Result
-        status="404"
-        title="404"
-        subTitle="Desculpe, a página que você visitou não existe."
-        extra={
-          <Button type="primary" onClick={() => navigate('/')}>
-            Voltar ao início
-          </Button>
-        }
-      />
+      <S.Code>404</S.Code>
+      <S.Title>Página não encontrada</S.Title>
+      <S.Subtitle>O endereço que você acessou não existe.</S.Subtitle>
+      <S.BackLink as={Link} to="/">
+        ← Voltar ao início
+      </S.BackLink>
     </S.Container>
   )
 }

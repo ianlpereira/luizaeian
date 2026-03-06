@@ -15,7 +15,7 @@
 - **Arquivo:** `EPIC-1-PLANNING.md`
 - **Escopo:** Estrutura do projeto, stack, deploy target, NFRs baseline
 - **US:** —
-- **Status:** 🔲 Planejado
+- **Status:** ✅ Completo
 
 ### 🎨 ÉPICO 2: Apresentação e Identidade Visual
 - **Arquivo:** `EPIC-2-PLANNING.md`

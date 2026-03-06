@@ -10,7 +10,7 @@ Site estático/BaaS para o casamento de Luiza e Ian. Frontend React + Vite + Typ
 
 | # | Épico | Status | Prioridade | Dependências |
 |---|---|---|---|---|
-| 1 | Foundation & Setup | 🔲 Planejado | 🔴 Crítica | — |
+| 1 | Foundation & Setup | ✅ Completo | 🔴 Crítica | — |
 | 2 | Apresentação e Identidade Visual | 🔲 Planejado | 🔴 Alta | Épico 1 |
 | 3 | Logística e Geolocalização | 🔲 Planejado | 🟡 Média | Épico 1 |
 | 4 | Lista de Presentes | 🔲 Planejado | 🟡 Média | Épico 1 |

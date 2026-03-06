@@ -50,10 +50,8 @@ services:
       - /app/node_modules
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:8000/api
-    depends_on:
-      - backend
+    env_file:
+      - ./frontend/.env
     networks:
       - luizaeian_network
 

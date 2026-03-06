@@ -1,6 +1,6 @@
 # 🏗️ Épico 1 — Fundação & Setup
 
-## Status: 🔲 PLANEJADO
+## Status: ✅ COMPLETO
 
 Este documento descreve o setup completo da **Épico 1 (Foundation)** do projeto Wedding Site "Luiza e Ian".
 
