@@ -1,6 +1,6 @@
 # 📍 Épico 3 — Logística e Geolocalização
 
-## Status: 🔲 PLANEJADO
+## Status: ✅ COMPLETO
 
 **User Story:** US 2.1 (Localização e Mapas)
 

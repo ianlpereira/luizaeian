@@ -27,7 +27,7 @@
 - **Arquivo:** `EPIC-3-PLANNING.md`
 - **Escopo:** Cards de endereço, integração Google Maps, deep links
 - **US:** US 2.1
-- **Status:** 🔲 Planejado
+- **Status:** ✅ Completo
 
 ### 🎁 ÉPICO 4: Lista de Presentes
 - **Arquivo:** `EPIC-4-PLANNING.md`

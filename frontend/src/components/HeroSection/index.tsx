@@ -14,13 +14,9 @@ export function HeroSection() {
 
   return (
     <S.Wrapper>
-      {/*
-       * PERF-01: fetchpriority="high" + sem loading="lazy" → Largest Contentful Paint otimizado.
-       * A imagem hero.webp deve ser colocada em /public/images/hero.webp
-       * (ou substituída pela URL do Supabase Storage).
-       */}
+      {/* PERF-01: fetchpriority="high" + sem loading="lazy" → LCP otimizado */}
       <S.BackgroundImage
-        src="/images/hero.webp"
+        src="/images/Ian y Luiza-1.webp"
         alt="Luiza e Ian"
         fetchPriority="high"
       />

@@ -1,0 +1,91 @@
+##############################################################################
+# render.yaml — Infrastructure as Code para Render.com
+# Documentação: https://render.com/docs/infrastructure-as-code
+#
+# Serviços declarados:
+#   1. luizaeian-frontend  → Static Site  (React + Vite, servido como SPA)
+#   2. luizaeian-backend   → Web Service  (FastAPI, Docker)
+#   3. luizaeian-db        → PostgreSQL   (gerenciado pelo Render)
+##############################################################################
+
+services:
+  # ──────────────────────────────────────────────────────────────────────────
+  # 1. FRONTEND — Static Site (SPA)
+  #    O Render faz o build e serve os arquivos estáticos diretamente via CDN.
+  #    O rewrite abaixo garante que o React Router funcione em todos os paths.
+  # ──────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: luizaeian-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+
+    # SPA rewrite: qualquer rota desconhecida devolve index.html
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    headers:
+      # Cache agressivo para assets com hash no nome (JS/CSS do Vite)
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      # Sem cache para index.html (sempre busca a versão mais recente)
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+
+    envVars:
+      # Preencha estes valores no dashboard do Render (ou via render.yaml secrets)
+      - key: VITE_SUPABASE_URL
+        sync: false          # Render pedirá o valor manualmente no primeiro deploy
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 2. BACKEND — Web Service (FastAPI via Docker)
+  # ──────────────────────────────────────────────────────────────────────────
+  - type: web
+    name: luizaeian-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+
+    # Render injeta a PORT automaticamente; o uvicorn deve ouvir nela
+    # O CMD do Dockerfile usa --port 8000 — sobrescrevemos aqui para produção
+    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    plan: free              # troque por "starter" ou superior para produção real
+    region: oregon          # opções: oregon | frankfurt | singapore | ohio
+
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: luizaeian-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true   # Render gera um valor aleatório seguro no deploy
+      - key: CORS_ORIGINS
+        # Substitua pela URL real do frontend após o primeiro deploy
+        value: '["https://luizaeian-frontend.onrender.com"]'
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 3. BANCO DE DADOS — PostgreSQL gerenciado
+  # ──────────────────────────────────────────────────────────────────────────
+databases:
+  - name: luizaeian-db
+    plan: free              # troque por "starter" ($7/mês) para persistência garantida
+    region: oregon          # deve ser a mesma região do backend
+    databaseName: luizaeian
+    user: luizaeian

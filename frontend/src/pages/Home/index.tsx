@@ -1,12 +1,15 @@
 import { HeroSection } from '@/components/HeroSection'
 import { Gallery } from '@/components/Gallery'
+import { Countdown } from '@/components/Countdown'
+import { EventInfo } from '@/components/EventInfo'
 import { galleryImages } from '@/data/gallery'
 import * as S from './styles'
 
 /**
  * HomePage — Site one-page.
- * Épico 2: HeroSection + Gallery implementados.
- * Épicos 3-5: placeholders aguardando implementação.
+ * Épico 2: HeroSection + Gallery implementados. ✅
+ * Épico 3: Countdown + EventInfo implementados. ✅
+ * Épicos 4-5: placeholders aguardando implementação.
  */
 export function HomePage() {
   return (
@@ -17,14 +20,11 @@ export function HomePage() {
       {/* ✅ ÉPICO 2 — Gallery */}
       <Gallery images={galleryImages} />
 
-      {/* ÉPICO 3 — Logística */}
-      <S.PlaceholderSection id="local" $bg="#f5f0e8">
-        <S.PlaceholderLabel>Épico 3</S.PlaceholderLabel>
-        <S.SectionTitle>Onde & Quando</S.SectionTitle>
-        <S.SectionSubtitle>
-          Local · Data · Mapa com deep links para Google Maps e Waze
-        </S.SectionSubtitle>
-      </S.PlaceholderSection>
+      {/* ✅ ÉPICO 3 — Countdown */}
+      <Countdown />
+
+      {/* ✅ ÉPICO 3 — Logística */}
+      <EventInfo />
 
       {/* ÉPICO 4 — Lista de Presentes */}
       <S.PlaceholderSection id="presentes">
