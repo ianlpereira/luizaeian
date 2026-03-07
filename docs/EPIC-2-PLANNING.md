@@ -1,6 +1,6 @@
 # 🎨 Épico 2 — Apresentação e Identidade Visual
 
-## Status: 🔲 PLANEJADO
+## Status: ✅ COMPLETO
 
 **User Stories:** US 1.1 (Hero Section) · US 1.2 (Galeria do Pré-Wedding)
 

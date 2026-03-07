@@ -21,7 +21,7 @@
 - **Arquivo:** `EPIC-2-PLANNING.md`
 - **Escopo:** Hero Section + Galeria do Pré-Wedding
 - **US:** US 1.1, US 1.2
-- **Status:** 🔲 Planejado
+- **Status:** ✅ Completo
 
 ### 📍 ÉPICO 3: Logística e Geolocalização
 - **Arquivo:** `EPIC-3-PLANNING.md`

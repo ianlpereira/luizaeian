@@ -1,29 +1,21 @@
+import { HeroSection } from '@/components/HeroSection'
+import { Gallery } from '@/components/Gallery'
+import { galleryImages } from '@/data/gallery'
 import * as S from './styles'
 
 /**
  * HomePage — Site one-page.
- * Cada seção é um placeholder que será implementada nos Épicos 2-5.
+ * Épico 2: HeroSection + Gallery implementados.
+ * Épicos 3-5: placeholders aguardando implementação.
  */
 export function HomePage() {
   return (
     <S.Page>
-      {/* ÉPICO 2 — Hero Section */}
-      <S.PlaceholderSection id="hero" $bg="#2c2c2c">
-        <S.PlaceholderLabel>Épico 2</S.PlaceholderLabel>
-        <S.SectionTitle style={{ color: '#ffffff' }}>Luiza &amp; Ian</S.SectionTitle>
-        <S.SectionSubtitle style={{ color: '#b0a898' }}>
-          Hero Section · Foto de casal · Smooth scroll
-        </S.SectionSubtitle>
-      </S.PlaceholderSection>
+      {/* ✅ ÉPICO 2 — Hero Section */}
+      <HeroSection />
 
-      {/* ÉPICO 2 — Gallery */}
-      <S.PlaceholderSection id="galeria">
-        <S.PlaceholderLabel>Épico 2</S.PlaceholderLabel>
-        <S.SectionTitle>Nossa História</S.SectionTitle>
-        <S.SectionSubtitle>
-          Galeria de fotos com lightbox
-        </S.SectionSubtitle>
-      </S.PlaceholderSection>
+      {/* ✅ ÉPICO 2 — Gallery */}
+      <Gallery images={galleryImages} />
 
       {/* ÉPICO 3 — Logística */}
       <S.PlaceholderSection id="local" $bg="#f5f0e8">
