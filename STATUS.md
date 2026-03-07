@@ -1,10 +1,10 @@
 # Status do Projeto
 
-> Última atualização: 2026-03-06
+> Última atualização: 2026-03-07
 
-## 📊 Estado Atual: `BOOTSTRAP`
+## 📊 Estado Atual: `ÉPICO 4 COMPLETO`
 
-O projeto foi inicializado com a estrutura base do monorepo. A plataforma está operacional via Docker Compose com hot-reload tanto no backend quanto no frontend.
+O projeto evoluiu do bootstrap inicial. Épicos 1–4 do site de casamento estão concluídos. A plataforma está operacional via Docker Compose com hot-reload tanto no backend quanto no frontend.
 
 ---
 
@@ -23,14 +23,46 @@ O projeto foi inicializado com a estrutura base do monorepo. A plataforma está 
 - [x] Pydantic v2 com `from_attributes = True`
 - [x] Frontend React 18 + Vite + TypeScript strict
 - [x] Styled Components com tema centralizado e `DefaultTheme` declarado
-- [x] Ant Design com locale pt-BR
 - [x] TanStack Query com devtools
 - [x] React Router v6 com layout aninhado
 - [x] Zustand com `persist` para auth state
-- [x] Axios com interceptors de auth e erro global
 - [x] React Hook Form + Zod (dependências prontas)
 - [x] Documentação em `docs/`
 - [x] `README.md` com instruções completas
+
+### EPIC-002 — Apresentação e Identidade Visual
+
+**Concluído em:** 2026-03-06
+
+- [x] HeroSection com `fetchPriority="high"`, scroll para `#galeria`
+- [x] Gallery — CSS Grid 2→3→4 cols, `aspect-ratio 3/4`
+- [x] Lightbox — swipe touch, navegação por teclado, body overflow lock
+- [x] 10 fotos reais integradas (`Ian y Luiza-N.webp`)
+
+### EPIC-003 — Logística e Geolocalização
+
+**Concluído em:** 2026-03-06
+
+- [x] `useCountdown` — setInterval 1s, flag `isOver`
+- [x] `Countdown` — 4 blocos + animação pulse
+- [x] `EventCard` — deep links Google Maps e Waze
+- [x] `LazyMap` — IntersectionObserver `rootMargin 200px`
+- [x] `EventInfo` — grid 2 cards + pílula DressCode
+- [x] `src/data/event.ts` — campos `dressCode`, `mapsEmbedUrl`
+
+### EPIC-004 — Lista de Presentes
+
+**Concluído em:** 2026-03-07
+
+- [x] Backend: modelos `Gift` + `GiftPurchase`, schemas Pydantic v2
+- [x] Backend: `GET /api/gifts` (filtro sort + category) + `POST /api/gifts/purchase`
+- [x] Alembic migration aplicada (`gifts` + `gift_purchases`)
+- [x] `src/lib/api.ts` — cliente fetch, lê `VITE_API_URL`
+- [x] `src/hooks/useGifts.ts` — migrado de Supabase para FastAPI
+- [x] `GiftCard` — badge Esgotado, hover scale
+- [x] `CheckoutModal` — React Hook Form + Zod + confetti + auto-close 2.5s
+- [x] `GiftList` — filter select, grid 2→3→4, skeletons shimmer
+- [x] Supabase removido integralmente (sem `@supabase/supabase-js`)
 
 ---
 
@@ -42,17 +74,16 @@ _Nenhum épico em andamento no momento._
 
 ## 📋 Site de Casamento "Luiza e Ian"
 
-> Produto paralelo documentado em `docs/`. Stack: React + Vite + TypeScript + Supabase + Vercel.
-> Todos os épicos planejados — aguardando início da implementação.
+> Stack: React + Vite + TypeScript + FastAPI + PostgreSQL + Render.com.
 
-### Épicos Planejados
+### Épicos
 
 | # | Épico | Arquivo | Status |
 |---|---|---|---|
 | 1 | Foundation & Setup | `docs/EPIC-1-PLANNING.md` | ✅ Completo |
 | 2 | Apresentação e Identidade Visual | `docs/EPIC-2-PLANNING.md` | ✅ Completo |
 | 3 | Logística e Geolocalização | `docs/EPIC-3-PLANNING.md` | ✅ Completo |
-| 4 | Lista de Presentes | `docs/EPIC-4-PLANNING.md` | 🔲 Planejado |
+| 4 | Lista de Presentes | `docs/EPIC-4-PLANNING.md` | ✅ Completo |
 | 5 | Engajamento (RSVP & Mural) | `docs/EPIC-5-PLANNING.md` | 🔲 Planejado |
 
 **Documentação completa:** `docs/DOCS-INDEX.md`

@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Site estático/BaaS para o casamento de Luiza e Ian. Frontend React + Vite + TypeScript hospedado na Vercel, backend via Supabase (Postgres + Realtime + Storage).
+Site estático/API-first para o casamento de Luiza e Ian. Frontend React + Vite + TypeScript, backend FastAPI + PostgreSQL, hospedados no Render.com.
 
 ---
 
@@ -13,7 +13,7 @@ Site estático/BaaS para o casamento de Luiza e Ian. Frontend React + Vite + Typ
 | 1 | Foundation & Setup | ✅ Completo | 🔴 Crítica | — |
 | 2 | Apresentação e Identidade Visual | ✅ Completo | 🔴 Alta | Épico 1 |
 | 3 | Logística e Geolocalização | ✅ Completo | 🟡 Média | Épico 1 |
-| 4 | Lista de Presentes | 🔲 Planejado | 🟡 Média | Épico 1 |
+| 4 | Lista de Presentes | ✅ Completo | 🟡 Média | Épico 1 |
 | 5 | Engajamento (RSVP & Mural) | 🔲 Planejado | 🔴 Alta | Épico 1 |
 
 ---
@@ -24,8 +24,8 @@ Site estático/BaaS para o casamento de Luiza e Ian. Frontend React + Vite + Typ
 Semana 1 ── Épico 1 (Foundation)
               └─ Scaffold Vite + TS
               └─ Tema visual (fonte serif, paleta dourado/rosê)
-              └─ Supabase project + tabelas SQL
-              └─ Deploy inicial na Vercel
+              └─ Supabase project + tabelas SQL → FastAPI + PostgreSQL
+              └─ Deploy inicial no Render
 
 Semana 2 ── Épico 2 (Visual)
               └─ HeroSection (imagem de casal, texto, CTA)
@@ -88,7 +88,6 @@ src/
 ├── data/
 │   └── event.ts
 ├── lib/
-│   ├── supabase.ts
 │   └── api.ts
 ├── stores/
 │   └── authStore.ts
@@ -102,7 +101,6 @@ src/
 │   └── gift.ts
 └── utils/
     ├── sanitize.ts
-    ├── webp.ts
     ├── breakpoints.ts
     └── avatar.ts
 ```
@@ -113,12 +111,12 @@ src/
 
 | Decisão | Escolha | Alternativa Considerada | Motivo |
 |---|---|---|---|
-| Backend | Supabase BaaS | FastAPI próprio | Zero infra para manter; perfeito para site evento único |
+| Backend | FastAPI próprio | Supabase BaaS | Controle total sobre lógica, modelo de dados e deploy no Render |
 | Frontend | Vite + React + TS | Next.js | Site é 100% client-side; Next seria over-engineering |
-| Hosting | Vercel | Netlify / S3 | Integração nativa com Vite; edge CDN gratuito |
+| Hosting | Render.com | Netlify / Vercel | Suporte nativo a Docker + PostgreSQL gerenciado |
 | Estilização | Styled Components | TailwindCSS | Consistência com o padrão do monorepo; tema tipado |
-| Realtime | Supabase Realtime | WebSockets próprios | Já incluso no plano gratuito |
-| Segurança | DOMPurify | Escape manual | Biblioteca testada; previne XSS em UGC |
+| Realtime | SSE / polling | Supabase Realtime | Próprio FastAPI; sem dependência externa |
+| Segurança | DOMPurify + html.escape | Escape manual | Dupla camada: frontend (DOMPurify) + backend (html.escape) |
 
 ---
 
@@ -126,7 +124,7 @@ src/
 
 - [ ] Todos os 5 épicos concluídos (checklists internos ✅)
 - [ ] Lighthouse Performance ≥ 90 em mobile
-- [ ] Sem erros no console em produção (Vercel logs)
+- [ ] Sem erros no console em produção (Render logs)
 - [ ] RSVP testado com e-mails reais
 - [ ] Mural de Recados com Realtime funcionando no mobile
 - [ ] Link de acesso enviado ao casal para aprovação final

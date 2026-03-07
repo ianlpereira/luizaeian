@@ -17,9 +17,10 @@ services:
   - type: web
     name: luizaeian-frontend
     runtime: static
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
+    # rootDir não definido — o build roda a partir da raiz do repositório.
+    # O package.json da raiz (scripts.build) faz `cd frontend && npm run build`.
+    buildCommand: npm run build
+    staticPublishPath: frontend/dist
 
     # SPA rewrite: qualquer rota desconhecida devolve index.html
     routes:
@@ -41,11 +42,9 @@ services:
         value: no-cache, no-store, must-revalidate
 
     envVars:
-      # Preencha estes valores no dashboard do Render (ou via render.yaml secrets)
-      - key: VITE_SUPABASE_URL
-        sync: false          # Render pedirá o valor manualmente no primeiro deploy
-      - key: VITE_SUPABASE_ANON_KEY
-        sync: false
+      # URL do backend no Render — ajuste após o primeiro deploy se o nome mudar
+      - key: VITE_API_URL
+        value: https://luizaeian-backend.onrender.com
 
   # ──────────────────────────────────────────────────────────────────────────
   # 2. BACKEND — Web Service (FastAPI via Docker)

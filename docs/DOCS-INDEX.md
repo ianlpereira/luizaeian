@@ -31,9 +31,9 @@
 
 ### 🎁 ÉPICO 4: Lista de Presentes
 - **Arquivo:** `EPIC-4-PLANNING.md`
-- **Escopo:** Catálogo de presentes + Checkout simulado + persistência Supabase
+- **Escopo:** Catálogo de presentes + Checkout simulado + persistência via FastAPI/PostgreSQL
 - **US:** US 3.1, US 3.2
-- **Status:** 🔲 Planejado
+- **Status:** ✅ Completo
 
 ### 📝 ÉPICO 5: Engajamento (RSVP & Mural)
 - **Arquivo:** `EPIC-5-PLANNING.md`

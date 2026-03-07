@@ -13,6 +13,21 @@ export interface GiftPurchase {
   id: string
   gift_id: string
   buyer_name: string
-  buyer_email: string
+  message: string | null
+  amount: number | null
   created_at: string
+}
+
+export type GiftSortOrder = 'asc' | 'desc'
+
+export interface GiftFilters {
+  sortOrder: GiftSortOrder
+  category?: string
+}
+
+export interface GiftPurchasePayload {
+  gift_id: string
+  buyer_name: string
+  message?: string
+  amount?: number
 }

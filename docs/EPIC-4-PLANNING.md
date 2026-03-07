@@ -1,6 +1,6 @@
 # 🎁 Épico 4 — Lista de Presentes (Mocked E-commerce)
 
-## Status: 🔲 PLANEJADO
+## Status: ✅ COMPLETO
 
 **User Stories:** US 3.1 (Catálogo de Presentes) · US 3.2 (Fluxo de Checkout Simulado)
 
@@ -8,7 +8,7 @@
 
 ## Contexto
 
-A lista de presentes é uma das funcionalidades mais interativas do site. O checkout é **simulado** — não há gateway de pagamento real, apenas registro no Supabase. O desafio técnico está na gestão de estado de cotas (stock), feedback visual de sucesso e prevenção de dupla compra.
+A lista de presentes é uma das funcionalidades mais interativas do site. O checkout é **simulado** — não há gateway de pagamento real, apenas registro no banco PostgreSQL via FastAPI. O desafio técnico está na gestão de estado de cotas (stock), feedback visual de sucesso e prevenção de dupla compra.
 
 ---
 
