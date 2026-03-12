@@ -22,11 +22,13 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the SQLAlchemy URL from settings
-config.set_main_option(
-    "sqlalchemy.url",
-    settings.DATABASE_URL.replace("+asyncpg", "")  # sync driver for migrations
+# Set the SQLAlchemy URL from settings — converte driver async para sync
+_db_url = (
+    settings.DATABASE_URL
+    .replace("postgresql+asyncpg://", "postgresql://")
+    .replace("postgresql+aiopg://", "postgresql://")
 )
+config.set_main_option("sqlalchemy.url", _db_url)
 
 target_metadata = Base.metadata
 
