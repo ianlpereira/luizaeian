@@ -16,9 +16,11 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy source code
 COPY . .
 
+# Entrypoint: roda migrations e sobe o servidor
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Expose port (default; Render sobrescreve via $PORT)
 EXPOSE 8000
 
-# Produção: sem --reload. A porta é lida de $PORT (injetada pelo Render)
-# ou cai para 8000 em ambientes locais/Docker Compose.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["/entrypoint.sh"]
