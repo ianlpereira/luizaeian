@@ -41,9 +41,11 @@
 - **US:** US 4.1, US 4.2
 - **Status:** ✅ Completo
 
----
-
-## 📊 Referências Gerais
+### �️ ÉPICO 6: Validação e Moderação de Conteúdo
+- **Arquivo:** `EPIC-6-PLANNING.md`
+- **Escopo:** Deduplicação de RSVP por nome + e-mail · Filtro de palavrão no Mural
+- **US:** US 5.1, US 5.2
+- **Status:** 🔲 Planejado
 
 - `STATUS.md` — Checklist geral de progresso
 - `ROADMAP.md` — Visão completa, timeline e prioridades
