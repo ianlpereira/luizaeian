@@ -18,8 +18,13 @@ export const BackgroundImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  /* Mobile: desloca para a esquerda para mostrar as duas pessoas */
+  object-position: 40% center;
   /* PERF-01: fetchpriority passado via prop, sem lazy — é o LCP */
+
+  ${media.tablet} {
+    object-position: center top;
+  }
 `
 
 export const Overlay = styled.div`
