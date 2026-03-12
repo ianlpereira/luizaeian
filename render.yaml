@@ -56,7 +56,8 @@ services:
 
     # Render injeta a PORT automaticamente; o uvicorn deve ouvir nela
     # O CMD do Dockerfile usa --port 8000 — sobrescrevemos aqui para produção
-    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Roda migrations antes de iniciar o servidor
+    dockerCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
 
     plan: free              # troque por "starter" ou superior para produção real
     region: oregon          # opções: oregon | frankfurt | singapore | ohio
