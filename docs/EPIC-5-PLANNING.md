@@ -1,6 +1,6 @@
 # 📝 Épico 5 — Engajamento (RSVP & Mural de Recados)
 
-## Status: 🔲 PLANEJADO
+## Status: ✅ COMPLETO
 
 **User Stories:** US 4.1 (Confirmação de Presença / RSVP) · US 4.2 (Mural de Recados)
 
@@ -8,9 +8,9 @@
 
 ## Contexto
 
-Este épico é o de maior interação com os convidados. O RSVP coleta dados estruturados para o casal planejar a festa. O Mural de Recados usa **Supabase Realtime** para exibir novas mensagens sem recarregar a página — criando uma experiência viva durante o período pré-casamento.
+Este épico é o de maior interação com os convidados. O RSVP coleta dados estruturados para o casal planejar a festa. O Mural de Recados usa **polling a cada 10 s** (via `refetchInterval` do TanStack Query) para exibir novas mensagens sem recarregar a página — eliminando a dependência do Supabase Realtime.
 
-A segurança é crítica aqui: todos os inputs passam por sanitização (`SEC-01`) antes de serem persistidos.
+A segurança é crítica aqui: todos os inputs passam por sanitização dupla — `DOMPurify` no frontend (`SEC-01`) e `html.escape` no backend — antes de serem persistidos.
 
 ---
 

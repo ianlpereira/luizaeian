@@ -3,6 +3,8 @@ import { Gallery } from '@/components/Gallery'
 import { Countdown } from '@/components/Countdown'
 import { EventInfo } from '@/components/EventInfo'
 import { GiftList } from '@/components/GiftList'
+import { RsvpForm } from '@/components/RsvpForm'
+import { MessageBoard } from '@/components/MessageBoard'
 import { galleryImages } from '@/data/gallery'
 import * as S from './styles'
 
@@ -11,7 +13,7 @@ import * as S from './styles'
  * Épico 2: HeroSection + Gallery implementados. ✅
  * Épico 3: Countdown + EventInfo implementados. ✅
  * Épico 4: GiftList implementado. ✅
- * Épico 5: placeholders aguardando implementação.
+ * Épico 5: RsvpForm + MessageBoard implementados. ✅
  */
 export function HomePage() {
   return (
@@ -31,23 +33,11 @@ export function HomePage() {
       {/* ✅ ÉPICO 4 — Lista de Presentes */}
       <GiftList />
 
-      {/* ÉPICO 5 — RSVP */}
-      <S.PlaceholderSection id="rsvp" $bg="#f5f0e8">
-        <S.PlaceholderLabel>Épico 5</S.PlaceholderLabel>
-        <S.SectionTitle>Confirme sua Presença</S.SectionTitle>
-        <S.SectionSubtitle>
-          Formulário de RSVP com acompanhantes
-        </S.SectionSubtitle>
-      </S.PlaceholderSection>
+      {/* ✅ ÉPICO 5 — RSVP */}
+      <RsvpForm />
 
-      {/* ÉPICO 5 — Mural de Recados */}
-      <S.PlaceholderSection id="mural">
-        <S.PlaceholderLabel>Épico 5</S.PlaceholderLabel>
-        <S.SectionTitle>Mural de Recados</S.SectionTitle>
-        <S.SectionSubtitle>
-          Mensagens em tempo real via Supabase Realtime
-        </S.SectionSubtitle>
-      </S.PlaceholderSection>
+      {/* ✅ ÉPICO 5 — Mural de Recados */}
+      <MessageBoard />
     </S.Page>
   )
 }

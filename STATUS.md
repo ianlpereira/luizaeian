@@ -1,8 +1,8 @@
 # Status do Projeto
 
-> Última atualização: 2026-03-07
+> Última atualização: 2026-03-12
 
-## 📊 Estado Atual: `ÉPICO 4 COMPLETO`
+## 📊 Estado Atual: `TODOS OS ÉPICOS COMPLETOS 🎉`
 
 O projeto evoluiu do bootstrap inicial. Épicos 1–4 do site de casamento estão concluídos. A plataforma está operacional via Docker Compose com hot-reload tanto no backend quanto no frontend.
 
@@ -64,11 +64,29 @@ O projeto evoluiu do bootstrap inicial. Épicos 1–4 do site de casamento estã
 - [x] `GiftList` — filter select, grid 2→3→4, skeletons shimmer
 - [x] Supabase removido integralmente (sem `@supabase/supabase-js`)
 
+### EPIC-005 — Engajamento (RSVP & Mural de Recados)
+
+**Concluído em:** 2026-03-12
+
+- [x] Backend: modelos `Rsvp` + `Message`, schemas Pydantic v2 + `email-validator`
+- [x] Backend: `POST /api/rsvp` (deduplicação por e-mail) + `GET /api/messages` + `POST /api/messages`
+- [x] Alembic migration aplicada (`rsvp` + `messages`)
+- [x] `src/hooks/useRsvp.ts` — mutation com sanitização SEC-01
+- [x] `src/hooks/useMessages.ts` — query + polling 10 s (`refetchInterval`)
+- [x] `RsvpForm` — React Hook Form + Zod + `useFieldArray` para acompanhantes
+- [x] `RsvpForm` — sub-form dinâmico só exibido para `confirmed`
+- [x] `RsvpForm` — estado de sucesso distinto para confirmado vs declinado
+- [x] `MessageBoard` — feed de cards com avatar de iniciais colorido
+- [x] `MessageBoard` — formulário inline, scroll ao topo após envio, contagem 500 chars
+- [x] `MessageBoard` — skeletons shimmer durante loading, empty state
+- [x] `src/utils/avatar.ts` — `getInitials` + `getAvatarColor` determinístico
+- [x] Integrado na `HomePage` (substituiu placeholders de Épico 5)
+
 ---
 
 ## 🔄 Em Andamento
 
-_Nenhum épico em andamento no momento._
+_Nenhum épico em andamento. Todos os épicos 1–5 concluídos._
 
 ---
 
@@ -84,7 +102,7 @@ _Nenhum épico em andamento no momento._
 | 2 | Apresentação e Identidade Visual | `docs/EPIC-2-PLANNING.md` | ✅ Completo |
 | 3 | Logística e Geolocalização | `docs/EPIC-3-PLANNING.md` | ✅ Completo |
 | 4 | Lista de Presentes | `docs/EPIC-4-PLANNING.md` | ✅ Completo |
-| 5 | Engajamento (RSVP & Mural) | `docs/EPIC-5-PLANNING.md` | 🔲 Planejado |
+| 5 | Engajamento (RSVP & Mural) | `docs/EPIC-5-PLANNING.md` | ✅ Completo |
 
 **Documentação completa:** `docs/DOCS-INDEX.md`
 **Roadmap:** `docs/ROADMAP.md`

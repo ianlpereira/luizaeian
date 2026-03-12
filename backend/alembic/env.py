@@ -11,7 +11,9 @@ from app.core.database import Base
 from app.core.config import settings
 
 # Import models here so they are registered with Base
-from app.models import gift  # noqa: F401
+from app.models import gift     # noqa: F401
+from app.models import rsvp     # noqa: F401
+from app.models import message  # noqa: F401
 
 # this is the Alembic Config object
 config = context.config

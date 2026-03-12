@@ -14,7 +14,7 @@ Site estático/API-first para o casamento de Luiza e Ian. Frontend React + Vite 
 | 2 | Apresentação e Identidade Visual | ✅ Completo | 🔴 Alta | Épico 1 |
 | 3 | Logística e Geolocalização | ✅ Completo | 🟡 Média | Épico 1 |
 | 4 | Lista de Presentes | ✅ Completo | 🟡 Média | Épico 1 |
-| 5 | Engajamento (RSVP & Mural) | 🔲 Planejado | 🔴 Alta | Épico 1 |
+| 5 | Engajamento (RSVP & Mural) | ✅ Completo | 🔴 Alta | Épico 1 |
 
 ---
 

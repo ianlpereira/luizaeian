@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.routers import health
 from app.routers import gifts
+from app.routers import rsvp
+from app.routers import messages
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -25,3 +27,5 @@ app.add_middleware(
 # Routers
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(gifts.router, prefix="/api/gifts", tags=["gifts"])
+app.include_router(rsvp.router, prefix="/api/rsvp", tags=["rsvp"])
+app.include_router(messages.router, prefix="/api/messages", tags=["messages"])

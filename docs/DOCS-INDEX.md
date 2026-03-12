@@ -37,9 +37,9 @@
 
 ### 📝 ÉPICO 5: Engajamento (RSVP & Mural)
 - **Arquivo:** `EPIC-5-PLANNING.md`
-- **Escopo:** Confirmação de presença + Mural de recados em tempo real
+- **Escopo:** Confirmação de presença + Mural de recados com polling
 - **US:** US 4.1, US 4.2
-- **Status:** 🔲 Planejado
+- **Status:** ✅ Completo
 
 ---
 
