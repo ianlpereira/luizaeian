@@ -1,10 +1,15 @@
 #!/bin/bash
 set -e
 
-# Extrai host e porta do DATABASE_URL para fazer o health-check de conexão
-# Formato esperado: postgresql+asyncpg://user:pass@host:port/dbname
-DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+)[:/].*|\1|')
-DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|.*:([0-9]+)/.*|\1|')
+# DATABASE_URL pode vir como:
+#   postgresql://user:pass@host/db            (Render — sem porta explícita)
+#   postgresql://user:pass@host:5432/db       (com porta explícita)
+#   postgresql+asyncpg://user:pass@host:5432/db (configuração local)
+
+# Extrai apenas a parte host:port (ou só host) depois do @
+DB_HOSTPORT=$(echo "$DATABASE_URL" | sed -E 's|.*@([^/]+)/.*|\1|')
+DB_HOST=$(echo "$DB_HOSTPORT" | cut -d: -f1)
+DB_PORT=$(echo "$DB_HOSTPORT" | grep -oE ':[0-9]+$' | tr -d ':')
 DB_PORT=${DB_PORT:-5432}
 
 echo "==> Waiting for database at ${DB_HOST}:${DB_PORT}..."
