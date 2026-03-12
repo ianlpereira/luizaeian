@@ -4,8 +4,18 @@ from typing import AsyncGenerator
 
 from app.core.config import settings
 
+
+def _async_db_url(url: str) -> str:
+    """Garante que a URL use driver asyncpg, independente do formato recebido."""
+    url = url.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
+    url = url.replace("postgres://", "postgresql+asyncpg://")
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    _async_db_url(settings.DATABASE_URL),
     echo=settings.DATABASE_ECHO,
     pool_pre_ping=True,
     pool_size=10,
