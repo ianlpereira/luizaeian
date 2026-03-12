@@ -74,8 +74,8 @@ services:
       - key: SECRET_KEY
         generateValue: true   # Render gera um valor aleatório seguro no deploy
       - key: CORS_ORIGINS
-        # Substitua pela URL real do frontend após o primeiro deploy
-        value: '["https://luizaeian-frontend.onrender.com"]'
+        # Aceita string separada por vírgula (mais seguro que JSON no YAML)
+        value: 'https://luizaeian.com,https://www.luizaeian.com'
 
   # ──────────────────────────────────────────────────────────────────────────
   # 3. BANCO DE DADOS — PostgreSQL gerenciado
