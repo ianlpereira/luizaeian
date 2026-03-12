@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 # Extrai host e porta do DATABASE_URL para fazer o health-check de conexão
@@ -24,5 +24,5 @@ echo "==> Database is ready."
 echo "==> Running database migrations..."
 alembic upgrade head
 
-echo "==> Starting server on port ${PORT:-8000}..."
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
+echo "==> Starting FastAPI application..."
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000

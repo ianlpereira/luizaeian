@@ -73,9 +73,6 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true   # Render gera um valor aleatório seguro no deploy
-      - key: CORS_ORIGINS
-        # Inclui domínio customizado (com e sem www) + URLs diretas do Render
-        value: 'https://luizaeian.com,https://www.luizaeian.com,https://luizaeian.onrender.com,https://luizaeian-frontend.onrender.com'
 
   # ──────────────────────────────────────────────────────────────────────────
   # 3. BANCO DE DADOS — PostgreSQL gerenciado

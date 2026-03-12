@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
+from typing import List
 from functools import lru_cache
-import json
 
 
 class Settings(BaseSettings):
@@ -19,15 +19,15 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
-    # CORS — recebida como string separada por vírgula ou JSON array
-    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
-
-    @property
-    def cors_origins_list(self) -> list[str]:
-        v = self.CORS_ORIGINS.strip()
-        if v.startswith("["):
-            return json.loads(v)
-        return [origin.strip() for origin in v.split(",") if origin.strip()]
+    # CORS — lista direta, sem parse manual
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://luizaeian.com",
+        "https://www.luizaeian.com",
+        "https://luizaeian.onrender.com",
+        "https://luizaeian-frontend.onrender.com",
+    ]
 
     class Config:
         env_file = ".env"
@@ -35,9 +35,4 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
-@lru_cache()
-def get_settings() -> Settings:
-    return Settings()
-
-
-settings = get_settings()
+settings = Settings()
