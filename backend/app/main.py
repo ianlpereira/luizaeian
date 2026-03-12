@@ -7,6 +7,9 @@ from app.routers import gifts
 from app.routers import rsvp
 from app.routers import messages
 
+import logging
+logger = logging.getLogger("uvicorn.error")
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -14,6 +17,9 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
 )
+
+# Log das origens CORS permitidas (visível nos logs do Render)
+logger.info("CORS allowed origins: %s", settings.cors_origins_list)
 
 # CORS Middleware
 app.add_middleware(

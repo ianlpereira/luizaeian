@@ -1,4 +1,3 @@
-from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 import json
@@ -20,7 +19,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
-    # CORS — recebida como string bruta, convertida pelo validator
+    # CORS — recebida como string separada por vírgula ou JSON array
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     @property
