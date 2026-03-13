@@ -59,6 +59,56 @@ export const SectionSubtitle = styled.p`
   margin: 0;
 `
 
+// ── Category filter ───────────────────────────────────────────────────────────
+
+export const CategoryRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.spacing.sm};
+`
+
+export const CategoryChip = styled.button<{ $active?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px ${({ theme }) => theme.spacing.md};
+  border-radius: ${({ theme }) => theme.borderRadius.pill};
+  border: 1.5px solid ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.border};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.surface};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.text.inverse : theme.colors.text.secondary};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 150ms ease;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ $active, theme }) =>
+      $active ? theme.colors.text.inverse : theme.colors.primary};
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  ${media.tablet} {
+    font-size: ${({ theme }) => theme.typography.fontSize.md};
+    padding: 8px ${({ theme }) => theme.spacing.lg};
+  }
+`
+
 // ── Filter bar ────────────────────────────────────────────────────────────────
 
 export const FilterBar = styled.div`
