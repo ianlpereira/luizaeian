@@ -10,13 +10,22 @@ const SKELETON_COUNT = 8
 const PAGE_SIZE = 8
 
 const CATEGORY_EMOJI: Record<string, string> = {
-  'Cozinha':      '🍳',
-  'Casa':         '🏡',
-  'Cama & Banho': '🛁',
-  'Eletrônicos':  '📺',
-  'Lazer':        '🎲',
-  'Viagem':       '✈️',
-  'Engraçado':    '🎉',
+  // categorias da seed atual
+  'Eletrodomésticos':   '🏠',
+  'Sala':               '🛋️',
+  'Quarto':             '🛏️',
+  'Cozinha':            '🍳',
+  'Cama, Mesa e Banho': '🛁',
+  'Decoração':          '🖼️',
+  'Utilidades':         '🧹',
+  'Lua de Mel':         '✈️',
+  // categorias legadas (seed anterior)
+  'Casa':               '🏡',
+  'Cama & Banho':       '🛁',
+  'Eletrônicos':        '📺',
+  'Lazer':              '🎲',
+  'Viagem':             '🗺️',
+  'Engraçado':          '🎉',
 }
 
 /** Gera array de páginas com reticências: [1, '…', 4, 5, 6, '…', 10] */
