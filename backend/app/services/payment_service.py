@@ -476,11 +476,33 @@ async def process_webhook(mp_payment_id: int, db: AsyncSession) -> None:
 # ── Consultar status ──────────────────────────────────────────────────────────
 
 async def get_payment_status(payment_id: uuid.UUID, db: AsyncSession) -> PaymentStatusOut:
-    """Retorna o status interno do pagamento sem expor dados sensíveis."""
+    """
+    Retorna o status interno do pagamento sem expor dados sensíveis.
+
+    Reconciliação automática: se o pagamento está aprovado mas o presente
+    ainda não foi fulfillado (gift_purchases ausente), executa _fulfill_gift.
+    Isso cobre casos em que o webhook falhou, atrasou, ou o status foi
+    alterado diretamente no banco (ex: ambiente de testes/mock).
+    """
     payment = await db.get(Payment, payment_id)
     if payment is None:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+
+    # Reconciliação: approved sem gift_purchase → fulfilla agora
+    if payment.status == PaymentStatus.APPROVED:
+        existing_purchase = await db.scalar(
+            select(GiftPurchase).where(GiftPurchase.gift_id == payment.gift_id)
+        )
+        if existing_purchase is None:
+            gift = await db.get(Gift, payment.gift_id)
+            if gift and not gift.purchased and gift.stock_limit > 0:
+                await _fulfill_gift(gift, payment.buyer_name, payment.message, db)
+                logger.info(
+                    "Reconciliação: presente %s fulfillado via polling (payment %s)",
+                    payment.gift_id,
+                    payment_id,
+                )
 
     return PaymentStatusOut(
         payment_id=str(payment.id),
