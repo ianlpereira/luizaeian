@@ -37,6 +37,17 @@ class Settings(BaseSettings):
             return json.loads(v)
         return [o.strip() for o in v.split(",") if o.strip()]
 
+    # ── Mercado Pago ──────────────────────────────────────────────────────────
+    # Credenciais sandbox: obter em https://www.mercadopago.com.br/developers
+    # Sandbox: MP_ACCESS_TOKEN começa com "TEST-"
+    # Produção: começa com "APP_USR-"
+    MP_ACCESS_TOKEN: str = ""
+    MP_PUBLIC_KEY: str = ""
+    MP_SANDBOX: bool = True
+    MP_PIX_EXPIRATION_MINUTES: int = 30
+    # Segredo HMAC para validar assinatura dos webhooks do Mercado Pago
+    MP_WEBHOOK_SECRET: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

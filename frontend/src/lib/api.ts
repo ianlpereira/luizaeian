@@ -89,3 +89,22 @@ export const api = {
 }
 
 export { ApiError }
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+
+import type {
+  CreatePaymentPayload,
+  CreatePaymentResponse,
+  PaymentStatusResponse,
+  PublicKeyResponse,
+} from '@/types/payment'
+
+export const createPayment = (payload: CreatePaymentPayload) =>
+  api.post<CreatePaymentResponse>('/api/payments/create', payload)
+
+export const getPaymentStatus = (paymentId: string) =>
+  api.get<PaymentStatusResponse>(`/api/payments/${paymentId}/status`)
+
+export const getMpPublicKey = () =>
+  api.get<PublicKeyResponse>('/api/payments/public-key')
+

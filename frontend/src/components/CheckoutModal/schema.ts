@@ -13,3 +13,5 @@ export const checkoutSchema = z.object({
 })
 
 export type CheckoutFormValues = z.infer<typeof checkoutSchema>
+
+export type PaymentMethodChoice = 'pix' | 'credit_card'

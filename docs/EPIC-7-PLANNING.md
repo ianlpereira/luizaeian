@@ -1,6 +1,6 @@
 # 💳 Épico 7 — Gateway de Pagamento Real (Cartão de Crédito & Pix)
 
-## Status: 🔲 PLANEJADO
+## Status: ✅ COMPLETO
 
 **User Stories:** US 6.1 (Integração com Gateway de Pagamento) · US 6.2 (Checkout com Cartão de Crédito) · US 6.3 (Checkout com Pix Dinâmico via API)
 
@@ -55,15 +55,15 @@ de forma segura e testável.
 - Endpoint `GET /api/payments/{payment_id}/status` para polling de status no frontend
 
 **Critérios de Aceite:**
-- [ ] `MP_ACCESS_TOKEN` e `MP_PUBLIC_KEY` carregados via `Settings` (Pydantic BaseSettings)
-- [ ] Ausência das variáveis lança erro descritivo na inicialização do app
-- [ ] `POST /api/payments/create` retorna `payment_id`, `status` e dados específicos por método
+- [x] `MP_ACCESS_TOKEN` e `MP_PUBLIC_KEY` carregados via `Settings` (Pydantic BaseSettings)
+- [x] Ausência das variáveis lança erro descritivo na inicialização do app
+- [x] `POST /api/payments/create` retorna `payment_id`, `status` e dados específicos por método
   (`qr_code` + `qr_code_base64` para Pix; `payment_id` para cartão)
-- [ ] `POST /api/payments/webhook` valida assinatura HMAC do Mercado Pago antes de processar
-- [ ] `GET /api/payments/{payment_id}/status` retorna `{ status, paid }` sem expor dados sensíveis
-- [ ] Tabela `payments` criada via Alembic com campos: `id`, `gift_id`, `mp_payment_id`,
+- [x] `POST /api/payments/webhook` valida assinatura HMAC do Mercado Pago antes de processar
+- [x] `GET /api/payments/{payment_id}/status` retorna `{ status, paid }` sem expor dados sensíveis
+- [x] Tabela `payments` criada via Alembic com campos: `id`, `gift_id`, `mp_payment_id`,
   `method`, `status`, `amount`, `created_at`
-- [ ] Em sandbox, pagamentos podem ser simulados com cartões e CPFs de teste do MP
+- [x] Em sandbox, pagamentos podem ser simulados com cartões e CPFs de teste do MP
 
 ---
 
@@ -82,14 +82,14 @@ site, **para** ter uma experiência de pagamento segura sem sair da página.
 - Em caso de recusa, permitir nova tentativa sem recarregar o modal
 
 **Critérios de Aceite:**
-- [ ] `@mercadopago/sdk-js` carregado dinamicamente (lazy) apenas quando o modal abre
-- [ ] Brick de cartão renderizado dentro do modal (não redireciona para outra página)
-- [ ] Submit envia apenas `{ cardToken, installments, issuer_id, payment_method_id }` ao backend
-- [ ] Backend cria pagamento via `mp.payment().create(...)` com `token` e `capture: true`
-- [ ] Pagamento aprovado → webhook atualiza `payments.status = 'approved'` → presente marcado como comprado
-- [ ] Pagamento recusado → exibe `detail` do erro do MP (ex: "Saldo insuficiente")
-- [ ] Botão "Confirmar pagamento" desabilitado durante o processamento (previne dupla submissão)
-- [ ] Em sandbox, cartão `4509 9535 6623 3704` (Visa teste) deve aprovar com CVV `123`
+- [x] `@mercadopago/sdk-js` carregado dinamicamente (lazy) apenas quando o modal abre
+- [x] Brick de cartão renderizado dentro do modal (não redireciona para outra página)
+- [x] Submit envia apenas `{ cardToken, installments, issuer_id, payment_method_id }` ao backend
+- [x] Backend cria pagamento via `mp.payment().create(...)` com `token` e `capture: true`
+- [x] Pagamento aprovado → webhook atualiza `payments.status = 'approved'` → presente marcado como comprado
+- [x] Pagamento recusado → exibe `detail` do erro do MP (ex: "Saldo insuficiente")
+- [x] Botão "Confirmar pagamento" desabilitado durante o processamento (previne dupla submissão)
+- [x] Em sandbox, cartão `4509 9535 6623 3704` (Visa teste) deve aprovar com CVV `123`
 
 ---
 
@@ -108,14 +108,14 @@ o meu pedido, **para** ter confirmação automática de pagamento sem intervenç
 - Remover botão "Já paguei" — confirmação agora é automática via webhook + polling
 
 **Critérios de Aceite:**
-- [ ] QR code gerado com `payment_method_id: "pix"` e `date_of_expiration` calculada
-- [ ] Imagem do QR code renderizada a partir do `qr_code_base64` retornado pelo MP
-- [ ] Texto `copia-e-cola` (campo `qr_code`) exibido com botão "Copiar"
-- [ ] Polling de `GET /api/payments/{payment_id}/status` a cada 5 s (via `setInterval`)
-- [ ] Polling encerrado automaticamente ao receber `paid: true` ou `status: 'cancelled'`
-- [ ] Em sandbox, pagamento simulado via requisição MP (sem app bancário)
-- [ ] Timer visual regressivo de 30 minutos exibido no modal
-- [ ] Presente marcado como comprado **apenas** após webhook confirmar `status: approved`
+- [x] QR code gerado com `payment_method_id: "pix"` e `date_of_expiration` calculada
+- [x] Imagem do QR code renderizada a partir do `qr_code_base64` retornado pelo MP
+- [x] Texto `copia-e-cola` (campo `qr_code`) exibido com botão "Copiar"
+- [x] Polling de `GET /api/payments/{payment_id}/status` a cada 5 s (via `setInterval`)
+- [x] Polling encerrado automaticamente ao receber `paid: true` ou `status: 'cancelled'`
+- [x] Em sandbox, pagamento simulado via requisição MP (sem app bancário)
+- [x] Timer visual regressivo de 30 minutos exibido no modal
+- [x] Presente marcado como comprado **apenas** após webhook confirmar `status: approved`
 
 ---
 
@@ -486,106 +486,106 @@ VITE_MP_PUBLIC_KEY=TEST-xxxxxxxxxxxxxxxxxxxx
 inicializa corretamente com as novas variáveis.
 
 Tasks:
-- [ ] Criar conta de teste no [Mercado Pago Developers](https://www.mercadopago.com.br/developers)
-- [ ] Obter `MP_ACCESS_TOKEN` e `MP_PUBLIC_KEY` do ambiente **sandbox**
-- [ ] Adicionar variáveis ao `.env` local e ao painel do Render
-- [ ] Atualizar `app/core/config.py` com as novas Settings
-- [ ] Criar `app/core/payment.py` com singleton do SDK
-- [ ] Instalar dependência: `pip install mercadopago`
-- [ ] Atualizar `requirements.txt`
+- [x] Criar conta de teste no [Mercado Pago Developers](https://www.mercadopago.com.br/developers)
+- [x] Obter `MP_ACCESS_TOKEN` e `MP_PUBLIC_KEY` do ambiente **sandbox**
+- [x] Adicionar variáveis ao `.env` local e ao painel do Render
+- [x] Atualizar `app/core/config.py` com as novas Settings
+- [x] Criar `app/core/payment.py` com singleton do SDK
+- [x] Instalar dependência: `pip install mercadopago`
+- [x] Atualizar `requirements.txt`
 
 ### Fase 7.2 — Tabela `payments` e migration
 
 **Objetivo:** Criar o modelo e a migration para rastrear pagamentos.
 
 Tasks:
-- [ ] Criar `app/models/payment.py` com o model `Payment`
-- [ ] Criar `app/schemas/payment.py` com schemas Pydantic de entrada e saída
-- [ ] Gerar migration com Alembic: `alembic revision --autogenerate -m "create_payments_table"`
-- [ ] Revisar e aplicar: `alembic upgrade head`
-- [ ] Registrar o novo model em `app/models/__init__.py`
+- [x] Criar `app/models/payment.py` com o model `Payment`
+- [x] Criar `app/schemas/payment.py` com schemas Pydantic de entrada e saída
+- [x] Gerar migration com Alembic: `alembic revision --autogenerate -m "create_payments_table"`
+- [x] Revisar e aplicar: `alembic upgrade head`
+- [x] Registrar o novo model em `app/models/__init__.py`
 
 ### Fase 7.3 — Endpoint `POST /api/payments/create`
 
 **Objetivo:** Criar o endpoint que gera pagamentos no Mercado Pago.
 
 Tasks:
-- [ ] Criar `app/services/payment_service.py`:
+- [x] Criar `app/services/payment_service.py`:
   - `create_pix_payment(gift, buyer_name, message, db)` → chama MP e persiste em `payments`
   - `create_card_payment(gift, buyer_name, card_token, installments, ...)` → idem
-- [ ] Criar `app/routers/payments.py` com `POST /api/payments/create`
-- [ ] Registrar o router em `app/main.py` com prefix `/api/payments`
-- [ ] Testar manualmente no Swagger UI com credenciais sandbox
-- [ ] Validar que Pix retorna `qr_code` e `qr_code_base64`
-- [ ] Validar que cartão sandbox aprova com `4509 9535 6623 3704`
+- [x] Criar `app/routers/payments.py` com `POST /api/payments/create`
+- [x] Registrar o router em `app/main.py` com prefix `/api/payments`
+- [x] Testar manualmente no Swagger UI com credenciais sandbox
+- [x] Validar que Pix retorna `qr_code` e `qr_code_base64`
+- [x] Validar que cartão sandbox aprova com `4509 9535 6623 3704`
 
 ### Fase 7.4 — Endpoint `POST /api/payments/webhook`
 
 **Objetivo:** Processar notificações do Mercado Pago e atualizar status do presente.
 
 Tasks:
-- [ ] Implementar validação HMAC em `app/core/payment.py`
-- [ ] Criar `POST /api/payments/webhook` em `app/routers/payments.py`
-- [ ] Lógica: validar assinatura → consultar status no MP → atualizar `payments` → se aprovado, chamar `purchase_gift_service()`
-- [ ] Configurar URL do webhook no painel do Mercado Pago (apontar para o endpoint)
-- [ ] Testar com [MP Webhook Tester](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks) no sandbox
+- [x] Implementar validação HMAC em `app/core/payment.py`
+- [x] Criar `POST /api/payments/webhook` em `app/routers/payments.py`
+- [x] Lógica: validar assinatura → consultar status no MP → atualizar `payments` → se aprovado, chamar `purchase_gift_service()`
+- [x] Configurar URL do webhook no painel do Mercado Pago (apontar para o endpoint)
+- [x] Testar com [MP Webhook Tester](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks) no sandbox
 
 ### Fase 7.5 — Endpoint `GET /api/payments/{payment_id}/status`
 
 **Objetivo:** Expor um endpoint de polling para o frontend verificar o status.
 
 Tasks:
-- [ ] Criar `GET /api/payments/{payment_id}/status` que retorna `{ payment_id, status, paid }`
-- [ ] Retornar `404` se `payment_id` não existe
-- [ ] Não expor dados sensíveis (sem dados do cartão, sem dados pessoais além do status)
+- [x] Criar `GET /api/payments/{payment_id}/status` que retorna `{ payment_id, status, paid }`
+- [x] Retornar `404` se `payment_id` não existe
+- [x] Não expor dados sensíveis (sem dados do cartão, sem dados pessoais além do status)
 
 ### Fase 7.6 — Frontend: Escolha de método e integração Pix Dinâmico
 
 **Objetivo:** Substituir o Pix manual pelo Pix dinâmico com QR code gerado pela API.
 
 Tasks:
-- [ ] Criar `src/types/payment.ts` com as interfaces
-- [ ] Criar `src/lib/loadMercadoPago.ts` para carregamento lazy do SDK
-- [ ] Criar `src/hooks/usePayment.ts` com `useCreatePayment` e `usePaymentStatus`
-- [ ] Adicionar `createPayment()` e `getPaymentStatus()` em `src/lib/api.ts`
-- [ ] Atualizar `CheckoutModal/schema.ts` com campo `payment_method`
-- [ ] Adicionar **Etapa 2** no modal: seleção de método (Pix ou Cartão)
-- [ ] Criar `src/components/CheckoutModal/PixStep.tsx`:
+- [x] Criar `src/types/payment.ts` com as interfaces
+- [x] Criar `src/lib/loadMercadoPago.ts` para carregamento lazy do SDK
+- [x] Criar `src/hooks/usePayment.ts` com `useCreatePayment` e `usePaymentStatus`
+- [x] Adicionar `createPayment()` e `getPaymentStatus()` em `src/lib/api.ts`
+- [x] Atualizar `CheckoutModal/schema.ts` com campo `payment_method`
+- [x] Adicionar **Etapa 2** no modal: seleção de método (Pix ou Cartão)
+- [x] Criar `src/components/CheckoutModal/PixStep.tsx`:
   - Renderiza `qr_code_base64` como `<img>`
   - Exibe `qr_code` (copia-e-cola) com botão "Copiar"
   - Timer regressivo de 30 minutos
   - Inicia polling via `usePaymentStatus`
   - Ao `paid: true` → avança para sucesso automaticamente
   - Ao expirar → exibe botão "Gerar novo QR code"
-- [ ] Remover botão "Já paguei" do fluxo de Pix
+- [x] Remover botão "Já paguei" do fluxo de Pix
 
 ### Fase 7.7 — Frontend: Cartão de Crédito com MP Brick
 
 **Objetivo:** Integrar o Brick de pagamento do Mercado Pago para cartão de crédito.
 
 Tasks:
-- [ ] Criar `src/components/CheckoutModal/CardStep.tsx`:
+- [x] Criar `src/components/CheckoutModal/CardStep.tsx`:
   - Carrega MP SDK via `loadMercadoPago(publicKey)` ao montar
   - Instancia `mp.bricks().create("cardPayment", ...)` no `<div id="cardPaymentBrick_container">`
   - Configura `initialization.amount` com o valor do presente
   - Configura `callbacks.onSubmit` para chamar `createPayment()` com o `formData` do Brick
   - Destrói o Brick ao desmontar (cleanup)
-- [ ] Endpoint `GET /api/payments/public-key` que retorna `{ public_key: settings.MP_PUBLIC_KEY }`
+- [x] Endpoint `GET /api/payments/public-key` que retorna `{ public_key: settings.MP_PUBLIC_KEY }`
   para o frontend não depender de variável de ambiente
-- [ ] Testar com cartão sandbox `4509 9535 6623 3704` (aprovação) e `4000 0000 0000 0002` (recusa)
-- [ ] Exibir mensagem de erro específica em caso de recusa (ex: "Saldo insuficiente")
+- [x] Testar com cartão sandbox `4509 9535 6623 3704` (aprovação) e `4000 0000 0000 0002` (recusa)
+- [x] Exibir mensagem de erro específica em caso de recusa (ex: "Saldo insuficiente")
 
 ### Fase 7.8 — Testes e Segurança
 
 **Objetivo:** Garantir cobertura de testes e sem vulnerabilidades.
 
 Tasks:
-- [ ] Escrever testes para `payment_service.py` com mock do MP SDK
-- [ ] Testar endpoint de webhook com payload simulado (assinatura válida e inválida)
-- [ ] Testar polling de status com `payment_id` inválido (deve retornar 404)
-- [ ] Garantir que `MP_ACCESS_TOKEN` não aparece em nenhum log
-- [ ] Garantir que `card_token` não é persistido no banco (apenas `mp_payment_id`)
-- [ ] Testar fluxo completo end-to-end em sandbox (Pix e Cartão)
+- [x] Escrever testes para `payment_service.py` com mock do MP SDK
+- [x] Testar endpoint de webhook com payload simulado (assinatura válida e inválida)
+- [x] Testar polling de status com `payment_id` inválido (deve retornar 404)
+- [x] Garantir que `MP_ACCESS_TOKEN` não aparece em nenhum log
+- [x] Garantir que `card_token` não é persistido no banco (apenas `mp_payment_id`)
+- [x] Testar fluxo completo end-to-end em sandbox (Pix e Cartão)
 
 ---
 
@@ -620,22 +620,22 @@ Tasks:
 
 ## Checklist de Conclusão
 
-- [ ] Credenciais sandbox configuradas e carregadas via variável de ambiente
-- [ ] Tabela `payments` criada com os campos corretos
-- [ ] `POST /api/payments/create` funciona para Pix e Cartão em sandbox
-- [ ] QR code Pix gerado dinamicamente e exibido no modal
-- [ ] Polling encerra automaticamente ao aprovar ou cancelar
-- [ ] Brick de cartão renderiza dentro do modal sem redirecionamento
-- [ ] Cartão sandbox `4509 9535 6623 3704` aprova o pagamento
-- [ ] Cartão sandbox `4000 0000 0000 0002` exibe mensagem de recusa
-- [ ] Webhook valida assinatura HMAC antes de processar
-- [ ] Webhook re-consulta status no MP (não confia no payload recebido)
-- [ ] Presente marcado como comprado **somente** após webhook confirmar aprovação
-- [ ] `MP_ACCESS_TOKEN` não aparece em nenhum log ou response
-- [ ] Dados do cartão não persistem no banco (somente `mp_payment_id`)
-- [ ] Botão "Já paguei" removido do fluxo de Pix
-- [ ] Confetes aparecem ao confirmar pagamento (Pix e Cartão)
-- [ ] Testes unitários do `payment_service` passando
+- [x] Credenciais sandbox configuradas e carregadas via variável de ambiente
+- [x] Tabela `payments` criada com os campos corretos
+- [x] `POST /api/payments/create` funciona para Pix e Cartão em sandbox
+- [x] QR code Pix gerado dinamicamente e exibido no modal
+- [x] Polling encerra automaticamente ao aprovar ou cancelar
+- [x] Brick de cartão renderiza dentro do modal sem redirecionamento
+- [x] Cartão sandbox `4509 9535 6623 3704` aprova o pagamento
+- [x] Cartão sandbox `4000 0000 0000 0002` exibe mensagem de recusa
+- [x] Webhook valida assinatura HMAC antes de processar
+- [x] Webhook re-consulta status no MP (não confia no payload recebido)
+- [x] Presente marcado como comprado **somente** após webhook confirmar aprovação
+- [x] `MP_ACCESS_TOKEN` não aparece em nenhum log ou response
+- [x] Dados do cartão não persistem no banco (somente `mp_payment_id`)
+- [x] Botão "Já paguei" removido do fluxo de Pix
+- [x] Confetes aparecem ao confirmar pagamento (Pix e Cartão)
+- [x] Testes unitários do `payment_service` passando
 
 ---
 

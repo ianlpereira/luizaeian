@@ -429,3 +429,107 @@ export const BackButton = styled.button`
     color: ${({ theme }) => theme.colors.text.primary};
   }
 `
+
+// ── Method selector (Etapa 2: escolha Pix | Cartão) ──────────────────────────
+
+export const MethodGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: ${({ theme }) => theme.spacing.md};
+`
+
+export const MethodCard = styled.button<{ $selected?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.md};
+  background: ${({ $selected, theme }) =>
+    $selected ? theme.colors.primary + '14' : theme.colors.surface};
+  border: 2px solid ${({ $selected, theme }) =>
+    $selected ? theme.colors.primary : theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  cursor: pointer;
+  transition:
+    border-color ${({ theme }) => theme.transitions.fast},
+    background ${({ theme }) => theme.transitions.fast};
+
+  &:hover:not(:disabled) {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`
+
+export const MethodIcon = styled.span`
+  font-size: 32px;
+  line-height: 1;
+`
+
+export const MethodLabel = styled.span`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  color: ${({ theme }) => theme.colors.text.primary};
+`
+
+export const MethodSub = styled.span`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-align: center;
+`
+
+export const MethodContinueButton = styled.button`
+  width: 100%;
+  padding: ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.text.inverse};
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.pill};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  cursor: pointer;
+  transition: background ${({ theme }) => theme.transitions.fast};
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.colors.primaryHover};
+  }
+
+  &:disabled {
+    background: ${({ theme }) => theme.colors.text.muted};
+    cursor: not-allowed;
+  }
+`
+
+// ── Pix: countdown timer ──────────────────────────────────────────────────────
+
+export const PixCountdown = styled.p<{ $warning?: boolean }>`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  color: ${({ $warning, theme }) => ($warning ? theme.colors.error : theme.colors.text.muted)};
+  margin: 0;
+  text-align: center;
+  transition: color 300ms ease;
+`
+
+// ── Card: Brick skeleton loader ───────────────────────────────────────────────
+
+const shimmer = keyframes`
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+`
+
+export const BrickSkeleton = styled.div`
+  width: 100%;
+  height: 280px;
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  background: linear-gradient(
+    90deg,
+    ${({ theme }) => theme.colors.borderLight} 25%,
+    ${({ theme }) => theme.colors.surfaceAlt} 50%,
+    ${({ theme }) => theme.colors.borderLight} 75%
+  );
+  background-size: 200% 100%;
+  animation: ${shimmer} 1.6s ease infinite;
+`

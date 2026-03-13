@@ -3,36 +3,45 @@ import { createPortal } from 'react-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import confetti from 'canvas-confetti'
-import { usePurchaseGift } from '@/hooks/useGifts'
-import { checkoutSchema, type CheckoutFormValues } from './schema'
-import { pixConfig } from '@/data/payment'
+import { useCreatePayment } from '@/hooks/usePayment'
+import { checkoutSchema, type CheckoutFormValues, type PaymentMethodChoice } from './schema'
+import { PixStep } from './PixStep'
+import { CardStep } from './CardStep'
 import * as S from './styles'
 import type { Gift } from '@/types/gift'
+import type { CreatePaymentResponse } from '@/types/payment'
 
 interface CheckoutModalProps {
   gift: Gift
   onClose: () => void
 }
 
-type Step = 'form' | 'payment' | 'success'
+type Step = 'form' | 'method' | 'pix' | 'card' | 'success'
 
 const formatBRL = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
 
 /**
- * Modal de checkout de presente — fluxo em 2 etapas:
- *   Etapa 1 (form)     — Nome + mensagem para o casal
- *   Etapa 2 (payment)  — Instruções de pagamento via Pix (chave + QR code)
- *   Sucesso            — Confetes + confirmação
+ * Modal de checkout — fluxo em 4 etapas:
+ *   1. form    — Nome + mensagem para o casal
+ *   2. method  — Escolha do método: Pix ou Cartão de Crédito
+ *   3a. pix    — QR code dinâmico + polling automático (sem "Já paguei")
+ *   3b. card   — MP Brick de cartão de crédito (tokenização no browser)
+ *   4. success — Confetes + confirmação
  *
- * A API é chamada apenas quando o usuário clica "Já paguei" na etapa 2,
- * registrando a compra somente após o pagamento ser realizado.
+ * Segurança:
+ * - Cartão: dados tokenizados pelo MP Brick — servidor recebe apenas o card_token
+ * - Pix: QR code gerado por transação com expiração de 30 min
+ * - Presente marcado como comprado SOMENTE após webhook do MP confirmar
  */
 export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
   const [step, setStep] = useState<Step>('form')
-  const [copied, setCopied] = useState(false)
   const [formValues, setFormValues] = useState<CheckoutFormValues | null>(null)
-  const { mutate, isPending, error } = usePurchaseGift()
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodChoice>('pix')
+  const [paymentData, setPaymentData] = useState<CreatePaymentResponse | null>(null)
+  const [cardError, setCardError] = useState<string | null>(null)
+
+  const { mutate: createPayment, isPending } = useCreatePayment()
 
   const {
     register,
@@ -53,200 +62,218 @@ export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
-  // Etapa 1 → 2: salva os dados do form e avança para o pagamento
+  // Dispara confetes e fecha o modal após sucesso
+  const handleSuccess = () => {
+    setStep('success')
+    confetti({
+      particleCount: 140,
+      spread: 80,
+      origin: { y: 0.55 },
+      colors: ['#c9a96e', '#e8b4b8', '#f5f0e8', '#ffffff'],
+    })
+    setTimeout(onClose, 2500)
+  }
+
+  // Etapa 1 → 2
   const onSubmitForm = (values: CheckoutFormValues) => {
     setFormValues(values)
-    setStep('payment')
+    setStep('method')
   }
 
-  // Etapa 2: copia a chave Pix para a área de transferência
-  const handleCopyKey = async () => {
-    try {
-      await navigator.clipboard.writeText(pixConfig.key)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // fallback silencioso para browsers que bloqueiam clipboard
-    }
-  }
-
-  // Etapa 2 → sucesso: chama a API e dispara confetes
-  const handleConfirmPayment = () => {
+  // Etapa 2 → 3 (Pix): cria o pagamento Pix e avança
+  const handleConfirmMethod = () => {
     if (!formValues) return
-    mutate(
-      {
-        gift_id: gift.id,
-        buyer_name: formValues.buyer_name,
-        message: formValues.message ?? undefined,
-      },
-      {
-        onSuccess: () => {
-          setStep('success')
-          confetti({
-            particleCount: 140,
-            spread: 80,
-            origin: { y: 0.55 },
-            colors: ['#c9a96e', '#e8b4b8', '#f5f0e8', '#ffffff'],
-          })
-          setTimeout(onClose, 2500)
+    if (selectedMethod === 'pix') {
+      createPayment(
+        {
+          gift_id: gift.id,
+          buyer_name: formValues.buyer_name,
+          message: formValues.message || undefined,
+          method: 'pix',
         },
-      },
-    )
+        {
+          onSuccess: (data) => {
+            setPaymentData(data)
+            setStep('pix')
+          },
+        },
+      )
+    } else {
+      setStep('card')
+    }
   }
 
-  const stepIndex = step === 'form' ? 0 : step === 'payment' ? 1 : 2
+  // Etapa card → API (chamado pelo CardStep via onPay)
+  const handleCardPay = (payload: Parameters<typeof createPayment>[0]) => {
+    setCardError(null)
+    createPayment(payload, {
+      onSuccess: (data) => {
+        if (data.status === 'approved') {
+          handleSuccess()
+        } else if (data.status === 'rejected') {
+          setCardError(data.detail ?? 'Pagamento recusado. Tente outro cartão.')
+        }
+        // pending/in_process: aguarda webhook (raro para cartão)
+      },
+      onError: (err) => {
+        setCardError((err as Error).message ?? 'Erro ao processar pagamento.')
+      },
+    })
+  }
 
-    // Render dentro de um portal para evitar que transform/overflow de ancestrais
-    // impeça o Backdrop de cobrir toda a viewport (problema comum em mobile).
-    if (typeof document !== 'undefined') {
-      return createPortal(
-        (
-          <S.Backdrop onClick={onClose} role="dialog" aria-modal="true" aria-label={`Presentear: ${gift.title}`}>
-            <S.Dialog onClick={(e) => e.stopPropagation()}>
-              {/* ── Header ──────────────────────────────────────────────────── */}
-              <S.Header>
-                <div>
-                  <S.GiftName>{gift.title}</S.GiftName>
-                  <S.Price>{formatBRL(gift.price)}</S.Price>
-                </div>
-                <S.CloseButton onClick={onClose} aria-label="Fechar modal">×</S.CloseButton>
-              </S.Header>
+  // Regenerar QR code: volta para método e recria
+  const handleRegenerateQr = () => {
+    setPaymentData(null)
+    setStep('method')
+  }
 
-              {/* ── Progress dots ────────────────────────────────────────────── */}
-              {step !== 'success' && (
-                <S.ProgressDots aria-label={`Etapa ${stepIndex + 1} de 2`}>
-                  <S.Dot $active={step === 'form'} $done={stepIndex > 0} />
-                  <S.DotLine />
-                  <S.Dot $active={step === 'payment'} $done={stepIndex > 1} />
-                </S.ProgressDots>
-              )}
+  // Cálculo do índice de progresso para os dots (etapas visíveis: form → method → payment)
+  const stepIndex = step === 'form' ? 0 : step === 'method' ? 1 : step === 'success' ? 3 : 2
 
-              {/* ── Etapa 1: Formulário ──────────────────────────────────────── */}
-              {step === 'form' && (
-                <S.Form onSubmit={handleSubmit(onSubmitForm)} noValidate>
-                  <S.Field>
-                    <label htmlFor="buyer_name">Seu nome *</label>
-                    <input
-                      id="buyer_name"
-                      type="text"
-                      placeholder="Nome completo"
-                      autoComplete="name"
-                      {...register('buyer_name')}
-                    />
-                    {errors.buyer_name && (
-                      <S.ErrorMsg role="alert">{errors.buyer_name.message}</S.ErrorMsg>
-                    )}
-                  </S.Field>
+  if (typeof document === 'undefined') return null
 
-                  <S.Field>
-                    <label htmlFor="message">Mensagem para o casal</label>
-                    <textarea
-                      id="message"
-                      placeholder="Escreva uma mensagem carinhosa… (opcional)"
-                      {...register('message')}
-                    />
-                    {errors.message && (
-                      <S.ErrorMsg role="alert">{errors.message.message}</S.ErrorMsg>
-                    )}
-                  </S.Field>
+  return createPortal(
+    (
+      <S.Backdrop onClick={onClose} role="dialog" aria-modal="true" aria-label={`Presentear: ${gift.title}`}>
+        <S.Dialog onClick={(e) => e.stopPropagation()}>
 
-                  <S.SubmitButton type="submit">
-                    Continuar para pagamento →
-                  </S.SubmitButton>
-                </S.Form>
-              )}
+          {/* ── Header ────────────────────────────────────────────────── */}
+          <S.Header>
+            <div>
+              <S.GiftName>{gift.title}</S.GiftName>
+              <S.Price>{formatBRL(gift.price)}</S.Price>
+            </div>
+            <S.CloseButton onClick={onClose} aria-label="Fechar modal">×</S.CloseButton>
+          </S.Header>
 
-              {/* ── Etapa 2: Pagamento via Pix ───────────────────────────────── */}
-              {step === 'payment' && (
-                <>
-                  {/* Preview do presente escolhido */}
-                  <S.GiftPreview>
-                    <S.GiftPreviewImg
-                      src={gift.image_url ?? '/images/gift-placeholder.webp'}
-                      alt={gift.title}
-                      loading="lazy"
-                    />
-                    <S.GiftPreviewInfo>
-                      <S.GiftPreviewName>{gift.title}</S.GiftPreviewName>
-                      <S.GiftPreviewPrice>{formatBRL(gift.price)}</S.GiftPreviewPrice>
-                    </S.GiftPreviewInfo>
-                  </S.GiftPreview>
+          {/* ── Progress dots (3 etapas visíveis) ─────────────────────── */}
+          {step !== 'success' && (
+            <S.ProgressDots aria-label={`Etapa ${stepIndex + 1} de 3`}>
+              <S.Dot $active={step === 'form'} $done={stepIndex > 0} />
+              <S.DotLine />
+              <S.Dot $active={step === 'method'} $done={stepIndex > 1} />
+              <S.DotLine />
+              <S.Dot $active={step === 'pix' || step === 'card'} $done={stepIndex > 2} />
+            </S.ProgressDots>
+          )}
 
-                  <S.PaymentBox>
-                    <S.PaymentTitle>
-                      Faça um Pix no valor de <strong>{formatBRL(gift.price)}</strong>
-                    </S.PaymentTitle>
+          {/* ── Etapa 1: Formulário ────────────────────────────────────── */}
+          {step === 'form' && (
+            <S.Form onSubmit={handleSubmit(onSubmitForm)} noValidate>
+              <S.Field>
+                <label htmlFor="buyer_name">Seu nome *</label>
+                <input
+                  id="buyer_name"
+                  type="text"
+                  placeholder="Nome completo"
+                  autoComplete="name"
+                  {...register('buyer_name')}
+                />
+                {errors.buyer_name && (
+                  <S.ErrorMsg role="alert">{errors.buyer_name.message}</S.ErrorMsg>
+                )}
+              </S.Field>
 
-                    {/* QR code ou placeholder */}
-                    <S.QrWrapper>
-                      {pixConfig.qrCodeUrl ? (
-                        <img src={pixConfig.qrCodeUrl} alt="QR Code Pix" />
-                      ) : (
-                        <S.QrPlaceholder>
-                          📲
-                        </S.QrPlaceholder>
-                      )}
-                    </S.QrWrapper>
+              <S.Field>
+                <label htmlFor="message">Mensagem para o casal</label>
+                <textarea
+                  id="message"
+                  placeholder="Escreva uma mensagem carinhosa… (opcional)"
+                  {...register('message')}
+                />
+                {errors.message && (
+                  <S.ErrorMsg role="alert">{errors.message.message}</S.ErrorMsg>
+                )}
+              </S.Field>
 
-                    {/* Chave Pix copiável */}
-                    <S.PixKeyBox>
-                      <S.PixKeyLabel>Chave Pix</S.PixKeyLabel>
-                      <S.PixKeyValue>{pixConfig.key}</S.PixKeyValue>
-                      <S.CopyButton
-                        type="button"
-                        $copied={copied}
-                        onClick={handleCopyKey}
-                        aria-label="Copiar chave Pix"
-                      >
-                        {copied ? '✓ Copiado' : 'Copiar'}
-                      </S.CopyButton>
-                    </S.PixKeyBox>
+              <S.SubmitButton type="submit">
+                Continuar →
+              </S.SubmitButton>
+            </S.Form>
+          )}
 
-                    <S.PaymentHint>
-                      Favorecido: <strong>{pixConfig.holderName}</strong>
-                      {pixConfig.bank ? ` · ${pixConfig.bank}` : ''}
-                      <br />
-                      Após pagar, clique em "Já paguei" para confirmar o presente.
-                    </S.PaymentHint>
-                  </S.PaymentBox>
+          {/* ── Etapa 2: Escolha do método de pagamento ─────────────────── */}
+          {step === 'method' && (
+            <>
+              <S.MethodGrid>
+                <S.MethodCard
+                  type="button"
+                  $selected={selectedMethod === 'pix'}
+                  onClick={() => setSelectedMethod('pix')}
+                  aria-pressed={selectedMethod === 'pix'}
+                >
+                  <S.MethodIcon>📲</S.MethodIcon>
+                  <S.MethodLabel>Pix</S.MethodLabel>
+                  <S.MethodSub>Instantâneo · gratuito</S.MethodSub>
+                </S.MethodCard>
 
-                  {error && (
-                    <S.ErrorBanner role="alert">
-                      Ops! Não foi possível registrar o presente. Tente novamente.
-                    </S.ErrorBanner>
-                  )}
+                <S.MethodCard
+                  type="button"
+                  $selected={selectedMethod === 'credit_card'}
+                  onClick={() => setSelectedMethod('credit_card')}
+                  aria-pressed={selectedMethod === 'credit_card'}
+                >
+                  <S.MethodIcon>💳</S.MethodIcon>
+                  <S.MethodLabel>Cartão</S.MethodLabel>
+                  <S.MethodSub>Crédito · até 12x</S.MethodSub>
+                </S.MethodCard>
+              </S.MethodGrid>
 
-                  <S.ConfirmButton
-                    type="button"
-                    disabled={isPending}
-                    onClick={handleConfirmPayment}
-                  >
-                    {isPending ? 'Confirmando…' : 'Já paguei ✓'}
-                  </S.ConfirmButton>
+              <S.MethodContinueButton
+                type="button"
+                disabled={isPending}
+                onClick={handleConfirmMethod}
+              >
+                {isPending ? 'Gerando pagamento…' : `Pagar com ${selectedMethod === 'pix' ? 'Pix' : 'Cartão'} →`}
+              </S.MethodContinueButton>
 
-                  <S.BackButton type="button" onClick={() => setStep('form')}>
-                    ← Voltar e editar dados
-                  </S.BackButton>
-                </>
-              )}
+              <S.BackButton type="button" onClick={() => setStep('form')}>
+                ← Voltar e editar dados
+              </S.BackButton>
+            </>
+          )}
 
-              {/* ── Sucesso ──────────────────────────────────────────────────── */}
-              {step === 'success' && (
-                <S.SuccessBox>
-                  <S.SuccessIcon>🎉</S.SuccessIcon>
-                  <S.SuccessText>Presente confirmado!</S.SuccessText>
-                  <S.SuccessSubtext>
-                    Luiza &amp; Ian agradecem seu carinho 💍
-                  </S.SuccessSubtext>
-                </S.SuccessBox>
-              )}
+          {/* ── Etapa 3a: Pix Dinâmico ────────────────────────────────── */}
+          {step === 'pix' && paymentData && (
+            <PixStep
+              paymentData={paymentData}
+              giftTitle={gift.title}
+              giftPrice={gift.price}
+              onSuccess={handleSuccess}
+              onBack={() => setStep('method')}
+              onRegenerateQr={handleRegenerateQr}
+            />
+          )}
 
-            </S.Dialog>
-          </S.Backdrop>
-        ),
-        document.body,
-      )
-    }
+          {/* ── Etapa 3b: Cartão (MP Brick) ───────────────────────────── */}
+          {step === 'card' && formValues && (
+            <CardStep
+              giftId={gift.id}
+              giftTitle={gift.title}
+              giftPrice={gift.price}
+              buyerName={formValues.buyer_name}
+              message={formValues.message || undefined}
+              onPay={handleCardPay}
+              onBack={() => setStep('method')}
+              isPending={isPending}
+              errorMsg={cardError}
+            />
+          )}
 
-    return null
+          {/* ── Sucesso ───────────────────────────────────────────────── */}
+          {step === 'success' && (
+            <S.SuccessBox>
+              <S.SuccessIcon>🎉</S.SuccessIcon>
+              <S.SuccessText>Presente confirmado!</S.SuccessText>
+              <S.SuccessSubtext>
+                Luiza &amp; Ian agradecem seu carinho 💍
+              </S.SuccessSubtext>
+            </S.SuccessBox>
+          )}
+
+        </S.Dialog>
+      </S.Backdrop>
+    ),
+    document.body,
+  )
 }

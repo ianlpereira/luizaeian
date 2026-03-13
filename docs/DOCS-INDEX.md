@@ -51,7 +51,11 @@
 - **Arquivo:** `EPIC-7-PLANNING.md`
 - **Escopo:** Integração Mercado Pago · Pix dinâmico com QR code · Cartão de crédito com MP Brick · Webhook de confirmação
 - **US:** US 6.1, US 6.2, US 6.3
-- **Status:** 🔲 Planejado
+- **Status:** ✅ Completo
+
+---
+
+## 📌 Outros Documentos
 
 - `STATUS.md` — Checklist geral de progresso
 - `ROADMAP.md` — Visão completa, timeline e prioridades
