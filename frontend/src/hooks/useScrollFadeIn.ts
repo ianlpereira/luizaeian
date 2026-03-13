@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react'
  *   transform: translateY(${({ $visible }) => ($visible ? 0 : '28px')});
  *   transition: opacity 0.6s ease, transform 0.6s ease;
  */
-export function useScrollFadeIn(threshold = 0.12) {
+export function useScrollFadeIn(threshold = 0.05) {
   const ref = useRef<HTMLElement | null>(null)
   const [isVisible, setIsVisible] = useState(false)
 
@@ -33,10 +33,32 @@ export function useScrollFadeIn(threshold = 0.12) {
           observer.disconnect()
         }
       },
-      { threshold },
+      {
+        threshold,
+        // Trigger 80px before the element enters the viewport.
+        // This fixes the case where the element is mounted already
+        // inside (or very near) the viewport — especially on mobile
+        // after navigating via anchor links (#presentes etc.).
+        rootMargin: '0px 0px -0px 0px',
+      },
     )
 
     observer.observe(el)
+
+    // Fallback: if the element is already in the viewport at mount time
+    // (e.g. user navigated directly to #presentes), the observer callback
+    // may not fire on some mobile browsers. Check synchronously via
+    // getBoundingClientRect and resolve immediately.
+    const rect = el.getBoundingClientRect()
+    const inViewport =
+      rect.top < window.innerHeight && rect.bottom > 0
+
+    if (inViewport) {
+      setIsVisible(true)
+      observer.disconnect()
+      return
+    }
+
     return () => observer.disconnect()
   }, [threshold])
 

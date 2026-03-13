@@ -7,11 +7,31 @@ export const Page = styled.div`
 
 /**
  * Minimal-height placeholder shown by <Suspense> while a lazy section loads.
- * Prevents layout jumping for sections below the fold.
+ * Shows a subtle pulse so the user knows content is coming (important during
+ * Render free-tier cold starts which can take up to 30 s).
  */
 export const SectionPlaceholder = styled.div`
   min-height: 200px;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.colors.background};
+
+  &::after {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 3px solid ${({ theme }) => theme.colors.primaryLight};
+    border-top-color: ${({ theme }) => theme.colors.primary};
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 `
 
 export const SectionTitle = styled.h2`
