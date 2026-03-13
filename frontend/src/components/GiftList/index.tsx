@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useGifts } from '@/hooks/useGifts'
 import { GiftCard } from '@/components/GiftCard'
 import { CheckoutModal } from '@/components/CheckoutModal'
@@ -28,6 +28,19 @@ const CATEGORY_EMOJI: Record<string, string> = {
   'Engraçado':          '🎉',
 }
 
+/** Fisher-Yates shuffle imutável — retorna novo array embaralhado. */
+function shuffle<T>(arr: T[], seed: number): T[] {
+  const a = [...arr]
+  // LCG pseudo-random derivado do seed de sessão
+  let s = seed
+  const rand = () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff }
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
 /** Gera array de páginas com reticências: [1, '…', 4, 5, 6, '…', 10] */
 function buildPageNumbers(current: number, total: number): (number | '…')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
@@ -45,16 +58,20 @@ function buildPageNumbers(current: number, total: number): (number | '…')[] {
  * Seção completa da lista de presentes.
  * Todos os dados são carregados de uma vez via API; a paginação é feita
  * no front com slice (PAGE_SIZE itens por página).
+ * Quando sortOrder === 'random', aplica Fisher-Yates com seed de sessão
+ * (ordem estável durante a visita, mas diferente a cada vez que a página abre).
  */
 export function GiftList() {
-  const [filters, setFilters] = useState<GiftFilters>({ sortOrder: 'asc' })
+  const [filters, setFilters] = useState<GiftFilters>({ sortOrder: 'random' })
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  // Seed gerado uma única vez por sessão — garante ordem estável durante a visita
+  const sessionSeed = useRef(Math.floor(Math.random() * 0xffffffff))
   const { ref, isVisible } = useScrollFadeIn()
 
   // Busca SEM filtro de categoria para derivar a lista de categorias disponíveis
   const { data: allGifts } = useGifts({ sortOrder: 'asc' })
-  // Busca COM filtros — traz tudo; paginação acontece no front
+  // Busca COM filtros — traz tudo; ordenação/paginação acontece no front
   const { data: gifts, isLoading, isError } = useGifts(filters)
 
   // Resetar para página 1 sempre que os filtros mudarem
@@ -73,17 +90,23 @@ export function GiftList() {
       })
   }, [allGifts])
 
+  // Aplica shuffle quando random, ou usa a lista já ordenada pela API
+  const orderedGifts = useMemo(() => {
+    if (!gifts) return []
+    if (filters.sortOrder === 'random') return shuffle(gifts, sessionSeed.current)
+    return gifts
+  }, [gifts, filters.sortOrder])
+
   // Paginação client-side
   const totalPages = useMemo(
-    () => Math.max(1, Math.ceil((gifts?.length ?? 0) / PAGE_SIZE)),
-    [gifts],
+    () => Math.max(1, Math.ceil(orderedGifts.length / PAGE_SIZE)),
+    [orderedGifts],
   )
 
   const pageGifts = useMemo(() => {
-    if (!gifts) return []
     const start = (currentPage - 1) * PAGE_SIZE
-    return gifts.slice(start, start + PAGE_SIZE)
-  }, [gifts, currentPage])
+    return orderedGifts.slice(start, start + PAGE_SIZE)
+  }, [orderedGifts, currentPage])
 
   const pageNumbers = useMemo(
     () => buildPageNumbers(currentPage, totalPages),
@@ -137,6 +160,7 @@ export function GiftList() {
             onChange={handleSortChange}
             aria-label="Ordenar presentes por preço"
           >
+            <option value="random">Aleatória</option>
             <option value="asc">Menor preço primeiro</option>
             <option value="desc">Maior preço primeiro</option>
           </S.SortSelect>

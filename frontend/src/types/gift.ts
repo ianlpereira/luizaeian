@@ -18,7 +18,7 @@ export interface GiftPurchase {
   created_at: string
 }
 
-export type GiftSortOrder = 'asc' | 'desc'
+export type GiftSortOrder = 'asc' | 'desc' | 'random'
 
 export interface GiftFilters {
   sortOrder: GiftSortOrder

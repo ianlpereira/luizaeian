@@ -14,7 +14,9 @@ export function useGifts(filters: GiftFilters) {
   return useQuery({
     queryKey: ['gifts', filters],
     queryFn: async (): Promise<Gift[]> => {
-      const params = new URLSearchParams({ sort: filters.sortOrder })
+      // 'random' não existe na API — envia 'asc' e o shuffle fica no front
+      const apiSort = filters.sortOrder === 'random' ? 'asc' : filters.sortOrder
+      const params = new URLSearchParams({ sort: apiSort })
       if (filters.category) params.set('category', filters.category)
       return api.get<Gift[]>(`/api/gifts?${params.toString()}`)
     },
