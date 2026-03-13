@@ -19,6 +19,5 @@ build/
 .coverage
 htmlcov/
 
-# Alembic
-alembic/versions/*.py
-!alembic/versions/.gitkeep
+# Alembic — versões de migration devem ser commitadas
+# alembic/versions/*.py
