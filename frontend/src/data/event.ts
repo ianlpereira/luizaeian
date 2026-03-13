@@ -28,8 +28,8 @@ export const eventInfo: EventInfo = {
   },
   // ⚠️ Atualize com a data e local reais antes do go-live
   date: '2026-10-31',
-  time: '18:00',
-  dressCode: 'Traje social — tons neutros e pastel',
+  time: '17:00',
+  dressCode: 'Passeio completo (terno, vestido longo ou traje social)',
   ceremony: {
     name: 'Paróquia Nossa Senhora dos Remédios',
     address: 'R. da Palma, s/n — Centro Histórico, São Luís - MA',
