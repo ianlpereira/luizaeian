@@ -27,34 +27,6 @@ done
 echo "==> Database is ready."
 
 echo "==> Running database migrations..."
-# Verifica se as tabelas principais existem — se não existirem, reseta o
-# alembic_version para forçar o Alembic a rodar todas as migrations do zero.
-# Isso corrige o caso em que alembic_version ficou com revisão incorreta
-# após um deploy que falhou no meio.
-python - <<'EOF'
-import os, sys
-from sqlalchemy import create_engine, text
-
-url = os.environ["DATABASE_URL"]
-# Normaliza driver para psycopg2 síncrono
-url = url.replace("postgresql+asyncpg://", "postgresql://")
-url = url.replace("postgres://", "postgresql://")
-
-engine = create_engine(url)
-with engine.connect() as conn:
-    result = conn.execute(text(
-        "SELECT COUNT(*) FROM information_schema.tables "
-        "WHERE table_schema = 'public' AND table_name = 'gifts'"
-    ))
-    count = result.scalar()
-    if count == 0:
-        print("Tables missing — resetting alembic_version to force full migration.")
-        conn.execute(text("DELETE FROM alembic_version"))
-        conn.commit()
-    else:
-        print("Tables exist — skipping alembic_version reset.")
-EOF
-
 alembic upgrade head
 
 echo "==> Starting FastAPI application..."
