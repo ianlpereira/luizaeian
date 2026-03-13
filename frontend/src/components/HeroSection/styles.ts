@@ -1,5 +1,10 @@
-import styled from 'styled-components'
+import styled, { keyframes } from 'styled-components'
 import { media } from '@/utils/breakpoints'
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+`
 
 export const Wrapper = styled.section`
   position: relative;
@@ -57,6 +62,8 @@ export const Eyebrow = styled.p`
   color: ${({ theme }) => theme.colors.primary};
   text-transform: uppercase;
   letter-spacing: 4px;
+  animation: ${fadeUp} 0.7s ease both;
+  animation-delay: 0.2s;
 `
 
 export const Title = styled.h1`
@@ -72,15 +79,19 @@ export const Title = styled.h1`
   font-style: italic;
   letter-spacing: 0.02em;
   line-height: ${({ theme }) => theme.typography.lineHeight.tight};
+  animation: ${fadeUp} 0.8s ease both;
+  animation-delay: 0.4s;
 `
 
 export const Subtitle = styled.p`
   font-family: ${({ theme }) => theme.typography.fontFamily.sans};
   font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.80);
   letter-spacing: 3px;
   text-transform: uppercase;
   font-weight: ${({ theme }) => theme.typography.fontWeight.light};
+  animation: ${fadeUp} 0.7s ease both;
+  animation-delay: 0.8s;
 
   ${media.tablet} {
     font-size: ${({ theme }) => theme.typography.fontSize.md};
@@ -89,17 +100,27 @@ export const Subtitle = styled.p`
 
 export const Divider = styled.span`
   display: block;
-  width: 40px;
+  width: 64px;
   height: 1px;
-  background-color: ${({ theme }) => theme.colors.primary};
-  margin: ${({ theme }) => theme.spacing.sm} auto;
+  background: linear-gradient(
+    to right,
+    transparent,
+    ${({ theme }) => theme.colors.primary},
+    transparent
+  );
+  margin: ${({ theme }) => theme.spacing.xs} auto;
+  animation: ${fadeUp} 0.6s ease both;
+  animation-delay: 0.65s;
 `
 
 export const DateBadge = styled.p`
   font-family: ${({ theme }) => theme.typography.fontFamily.sans};
   font-size: ${({ theme }) => theme.typography.fontSize.sm};
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.85);
   letter-spacing: 1px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  animation: ${fadeUp} 0.7s ease both;
+  animation-delay: 1.0s;
 `
 
 export const ScrollButton = styled.button`

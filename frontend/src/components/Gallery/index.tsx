@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { GalleryItem } from './GalleryItem'
 import { Lightbox } from '@/components/Lightbox'
+import { useScrollFadeIn } from '@/hooks/useScrollFadeIn'
 import type { GalleryImage } from '@/data/gallery'
 import * as S from './styles'
 
@@ -10,9 +11,10 @@ interface GalleryProps {
 
 export function Gallery({ images }: GalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const { ref, isVisible } = useScrollFadeIn()
 
   return (
-    <S.Section id="galeria">
+    <S.Section id="galeria" ref={ref as never} $visible={isVisible}>
       <S.Header>
         <S.SectionLabel>Pré-Wedding</S.SectionLabel>
         <S.Title>Nossa História</S.Title>

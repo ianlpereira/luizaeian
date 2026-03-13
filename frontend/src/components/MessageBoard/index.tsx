@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMessages, usePostMessage } from '@/hooks/useMessages'
 import { messageSchema, type MessageFormValues } from '@/components/MessageForm/schema'
+import { useScrollFadeIn } from '@/hooks/useScrollFadeIn'
 import { MessageCard } from './MessageCard'
 import * as S from './styles'
 
@@ -16,6 +17,7 @@ import * as S from './styles'
 export function MessageBoard() {
   const feedRef = useRef<HTMLDivElement>(null)
   const { data: messages, isLoading } = useMessages()
+  const { ref: sectionRef, isVisible } = useScrollFadeIn()
 
   const {
     register,
@@ -43,7 +45,7 @@ export function MessageBoard() {
   }
 
   return (
-    <S.Section id="mural">
+    <S.Section id="mural" ref={sectionRef as never} $visible={isVisible}>
       <S.Inner>
         <S.SectionTitle>Mural de Recados</S.SectionTitle>
         <S.SectionSubtitle>Deixe uma mensagem para os noivos 💌</S.SectionSubtitle>
@@ -80,6 +82,11 @@ export function MessageBoard() {
         </S.MessageForm>
 
         {/* ── Feed de mensagens ───────────────────────────────────────────── */}
+        {(!isLoading && (messages?.length ?? 0) > 0) && (
+          <S.FeedDivider>
+            <S.FeedDividerLabel>Mensagens dos convidados</S.FeedDividerLabel>
+          </S.FeedDivider>
+        )}
         <S.Feed ref={feedRef}>
           {isLoading && (
             <>

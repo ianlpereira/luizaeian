@@ -11,22 +11,42 @@ const pulse = keyframes`
   50%       { opacity: 0.4; }
 `
 
+export const Section = styled.section`
+  background: ${({ theme }) => theme.colors.surfaceAlt};
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  padding: ${({ theme }) => theme.spacing.xl} ${({ theme }) => theme.spacing.md};
+
+  ${media.tablet} {
+    padding: ${({ theme }) => theme.spacing.xxl} ${({ theme }) => theme.spacing.xl};
+  }
+`
+
 export const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.lg};
-  padding: ${({ theme }) => theme.spacing.xl} ${({ theme }) => theme.spacing.md};
   animation: ${fadeUp} 0.6s ease both;
 `
 
-export const Label = styled.p`
+export const Eyebrow = styled.p`
   font-family: ${({ theme }) => theme.typography.fontFamily.sans};
-  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
   font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
-  color: ${({ theme }) => theme.colors.text.muted};
-  letter-spacing: 0.12em;
+  color: ${({ theme }) => theme.colors.primary};
   text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 0;
+`
+
+export const Label = styled.p`
+  font-family: ${({ theme }) => theme.typography.fontFamily.serif};
+  font-size: ${({ theme }) => theme.typography.fontSize.lg};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  font-style: italic;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  letter-spacing: 0.04em;
   margin: 0;
 `
 

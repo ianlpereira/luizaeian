@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGifts } from '@/hooks/useGifts'
 import { GiftCard } from '@/components/GiftCard'
 import { CheckoutModal } from '@/components/CheckoutModal'
+import { useScrollFadeIn } from '@/hooks/useScrollFadeIn'
 import type { Gift, GiftFilters, GiftSortOrder } from '@/types/gift'
 import * as S from './styles'
 
@@ -15,6 +16,7 @@ const SKELETON_COUNT = 8
 export function GiftList() {
   const [filters, setFilters] = useState<GiftFilters>({ sortOrder: 'asc' })
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null)
+  const { ref, isVisible } = useScrollFadeIn()
 
   const { data: gifts, isLoading, isError } = useGifts(filters)
 
@@ -23,7 +25,7 @@ export function GiftList() {
   }
 
   return (
-    <S.Section id="presentes">
+    <S.Section id="presentes" ref={ref as never} $visible={isVisible}>
       <S.Inner>
         <S.SectionTitle>Lista de Presentes</S.SectionTitle>
         <S.SectionSubtitle>

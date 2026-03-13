@@ -1,9 +1,12 @@
 import styled from 'styled-components'
 import { media } from '@/utils/breakpoints'
 
-export const Section = styled.section`
+export const Section = styled.section<{ $visible?: boolean }>`
   background-color: ${({ theme }) => theme.colors.background};
   padding: ${({ theme }) => theme.spacing.xxl} 0;
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transform: translateY(${({ $visible }) => ($visible ? '0' : '28px')});
+  transition: opacity 0.6s ease, transform 0.6s ease;
 `
 
 export const Header = styled.div`
@@ -29,8 +32,14 @@ export const Title = styled.h2`
     ${({ theme }) => theme.typography.fontSize.xxl}
   );
   font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  font-style: italic;
   color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: ${({ theme }) => theme.spacing.sm};
+  /* Rosê-gold underline using the secondary palette */
+  text-decoration: underline;
+  text-decoration-color: ${({ theme }) => theme.colors.secondaryLight};
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
 `
 
 export const Subtitle = styled.p`
@@ -99,25 +108,42 @@ export const ItemOverlay = styled.div`
   background: rgba(0, 0, 0, 0);
   transition: background ${({ theme }) => theme.transitions.normal};
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   ${ItemWrapper}:hover & {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.38);
   }
 `
 
-export const ItemIndex = styled.span`
-  position: absolute;
-  bottom: ${({ theme }) => theme.spacing.sm};
-  right: ${({ theme }) => theme.spacing.sm};
-  font-size: ${({ theme }) => theme.typography.fontSize.xs};
-  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: 1px;
+export const ExpandIcon = styled.span`
   opacity: 0;
-  transition: opacity ${({ theme }) => theme.transitions.fast};
+  transform: scale(0.7);
+  transition:
+    opacity ${({ theme }) => theme.transitions.normal},
+    transform ${({ theme }) => theme.transitions.normal};
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
+
+  svg {
+    width: 28px;
+    height: 28px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  }
+
+  ${media.tablet} {
+    svg {
+      width: 32px;
+      height: 32px;
+    }
+  }
 
   ${ItemWrapper}:hover & {
     opacity: 1;
+    transform: scale(1);
   }
 `

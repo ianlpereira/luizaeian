@@ -3,10 +3,13 @@ import { media } from '@/utils/breakpoints'
 
 // ─── Form wrapper ─────────────────────────────────────────────────────────────
 
-export const Section = styled.section`
+export const Section = styled.section<{ $visible?: boolean }>`
   background-color: ${({ theme }) => theme.colors.surfaceAlt};
   padding: ${({ theme }) => theme.spacing.xxl} ${({ theme }) => theme.spacing.md};
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transform: translateY(${({ $visible }) => ($visible ? '0' : '28px')});
+  transition: opacity 0.6s ease, transform 0.6s ease;
 `
 
 export const Inner = styled.div`
@@ -18,9 +21,21 @@ export const SectionTitle = styled.h2`
   font-family: ${({ theme }) => theme.typography.fontFamily.serif};
   font-size: ${({ theme }) => theme.typography.fontSize.xl};
   font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  font-style: italic;
   color: ${({ theme }) => theme.colors.text.primary};
   text-align: center;
   margin-bottom: ${({ theme }) => theme.spacing.sm};
+
+  &::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: ${({ theme }) => theme.colors.secondary};
+    border-radius: 2px;
+    margin: ${({ theme }) => theme.spacing.sm} auto 0;
+    opacity: 0.7;
+  }
 
   ${media.tablet} {
     font-size: ${({ theme }) => theme.typography.fontSize.xxl};
@@ -87,26 +102,59 @@ export const ErrorMsg = styled.span`
 // ─── Status radio group ───────────────────────────────────────────────────────
 
 export const StatusGroup = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: ${({ theme }) => theme.spacing.sm};
+`
+
+export const StatusOption = styled.label<{ $checked?: boolean }>`
   display: flex;
-  gap: ${({ theme }) => theme.spacing.md};
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.sm};
+  border: 2px solid ${({ theme, $checked }) =>
+    $checked ? theme.colors.primary : theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  background: ${({ theme, $checked }) =>
+    $checked ? theme.colors.primaryLight : theme.colors.surface};
+  cursor: pointer;
+  transition:
+    border-color ${({ theme }) => theme.transitions.fast},
+    background ${({ theme }) => theme.transitions.fast};
+  text-align: center;
+  text-transform: none;
+  letter-spacing: 0;
 
-  label {
-    display: flex;
-    align-items: center;
-    gap: ${({ theme }) => theme.spacing.sm};
-    font-size: ${({ theme }) => theme.typography.fontSize.md};
-    color: ${({ theme }) => theme.colors.text.primary};
-    cursor: pointer;
-    text-transform: none;
-    letter-spacing: 0;
-
-    input[type='radio'] {
-      accent-color: ${({ theme }) => theme.colors.primary};
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-    }
+  /* hide the native radio */
+  input[type='radio'] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
   }
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+    background: ${({ theme }) => theme.colors.primaryLight};
+  }
+`
+
+export const StatusEmoji = styled.span`
+  font-size: 24px;
+  line-height: 1;
+
+  ${media.tablet} {
+    font-size: 28px;
+  }
+`
+
+export const StatusText = styled.span`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  color: ${({ theme }) => theme.colors.text.primary};
 `
 
 // ─── Companions ───────────────────────────────────────────────────────────────
@@ -116,7 +164,7 @@ export const CompanionsSection = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.sm};
   padding: ${({ theme }) => theme.spacing.md};
-  border: 1px dashed ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
   border-radius: ${({ theme }) => theme.borderRadius.md};
   background-color: ${({ theme }) => theme.colors.surface};
 `
@@ -197,8 +245,7 @@ export const SubmitButton = styled.button`
   padding: 14px ${({ theme }) => theme.spacing.lg};
   font-size: ${({ theme }) => theme.typography.fontSize.md};
   font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  letter-spacing: 0.5px;
   border: none;
   border-radius: ${({ theme }) => theme.borderRadius.pill};
   background-color: ${({ theme }) => theme.colors.primary};

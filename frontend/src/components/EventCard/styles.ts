@@ -16,9 +16,12 @@ export const Card = styled.article`
   display: flex;
   flex-direction: column;
   box-shadow: ${({ theme }) => theme.shadows.md};
-  transition: box-shadow ${({ theme }) => theme.transitions.normal};
+  transition:
+    transform ${({ theme }) => theme.transitions.normal},
+    box-shadow ${({ theme }) => theme.transitions.normal};
 
   &:hover {
+    transform: translateY(-4px);
     box-shadow: ${({ theme }) => theme.shadows.lg};
   }
 `

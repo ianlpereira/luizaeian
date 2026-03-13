@@ -3,9 +3,12 @@ import { media } from '@/utils/breakpoints'
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
-export const Section = styled.section`
+export const Section = styled.section<{ $visible?: boolean }>`
   background-color: ${({ theme }) => theme.colors.background};
   padding: ${({ theme }) => theme.spacing.xxl} ${({ theme }) => theme.spacing.md};
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transform: translateY(${({ $visible }) => ($visible ? '0' : '28px')});
+  transition: opacity 0.6s ease, transform 0.6s ease;
 `
 
 export const Inner = styled.div`
@@ -17,9 +20,21 @@ export const SectionTitle = styled.h2`
   font-family: ${({ theme }) => theme.typography.fontFamily.serif};
   font-size: ${({ theme }) => theme.typography.fontSize.xl};
   font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  font-style: italic;
   color: ${({ theme }) => theme.colors.text.primary};
   text-align: center;
   margin-bottom: ${({ theme }) => theme.spacing.sm};
+
+  &::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: ${({ theme }) => theme.colors.secondary};
+    border-radius: 2px;
+    margin: ${({ theme }) => theme.spacing.sm} auto 0;
+    opacity: 0.7;
+  }
 
   ${media.tablet} {
     font-size: ${({ theme }) => theme.typography.fontSize.xxl};
@@ -88,7 +103,7 @@ export const Textarea = styled.textarea`
   background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text.primary};
   resize: vertical;
-  min-height: 80px;
+  min-height: 120px;
   transition: border-color ${({ theme }) => theme.transitions.fast};
   box-sizing: border-box;
 
@@ -156,6 +171,29 @@ export const Feed = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.md};
+`
+
+export const FeedDivider = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: ${({ theme }) => theme.colors.borderLight};
+  }
+`
+
+export const FeedDividerLabel = styled.span`
+  font-family: ${({ theme }) => theme.typography.fontFamily.serif};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-style: italic;
+  color: ${({ theme }) => theme.colors.text.muted};
+  white-space: nowrap;
 `
 
 export const Card = styled.article`

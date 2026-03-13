@@ -1,6 +1,7 @@
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useSubmitRsvp } from '@/hooks/useRsvp'
+import { useScrollFadeIn } from '@/hooks/useScrollFadeIn'
 import { rsvpSchema, type RsvpFormValues } from './schema'
 import * as S from './styles'
 
@@ -16,6 +17,7 @@ import * as S from './styles'
  */
 export function RsvpForm() {
   const { mutate, isPending, isSuccess, error } = useSubmitRsvp()
+  const { ref, isVisible } = useScrollFadeIn()
 
   const {
     register,
@@ -37,7 +39,7 @@ export function RsvpForm() {
   if (isSuccess) {
     const isConfirmed = watch('status') === 'confirmed'
     return (
-      <S.Section id="rsvp">
+      <S.Section id="rsvp" ref={ref as never} $visible={isVisible}>
         <S.Inner>
           <S.SuccessBox>
             <S.SuccessEmoji>{isConfirmed ? '🎉' : '💌'}</S.SuccessEmoji>
@@ -56,7 +58,7 @@ export function RsvpForm() {
   }
 
   return (
-    <S.Section id="rsvp">
+    <S.Section id="rsvp" ref={ref as never} $visible={isVisible}>
       <S.Inner>
         <S.SectionTitle>Confirme sua Presença</S.SectionTitle>
         <S.SectionSubtitle>
@@ -93,14 +95,16 @@ export function RsvpForm() {
           <S.Field>
             <label>Confirmação *</label>
             <S.StatusGroup>
-              <label>
+              <S.StatusOption $checked={status === 'confirmed'}>
                 <input {...register('status')} type="radio" value="confirmed" />
-                ✅ Vou comparecer
-              </label>
-              <label>
+                <S.StatusEmoji>🎉</S.StatusEmoji>
+                <S.StatusText>Vou comparecer</S.StatusText>
+              </S.StatusOption>
+              <S.StatusOption $checked={status === 'declined'}>
                 <input {...register('status')} type="radio" value="declined" />
-                ❌ Não poderei ir
-              </label>
+                <S.StatusEmoji>💌</S.StatusEmoji>
+                <S.StatusText>Não poderei ir</S.StatusText>
+              </S.StatusOption>
             </S.StatusGroup>
             {errors.status && <S.ErrorMsg>{errors.status.message}</S.ErrorMsg>}
           </S.Field>

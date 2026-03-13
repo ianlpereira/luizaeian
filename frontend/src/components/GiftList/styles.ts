@@ -6,9 +6,12 @@ const shimmer = keyframes`
   100% { background-position:  600px 0; }
 `
 
-export const Section = styled.section`
+export const Section = styled.section<{ $visible?: boolean }>`
   background: ${({ theme }) => theme.colors.background};
   padding: ${({ theme }) => theme.spacing.xl} ${({ theme }) => theme.spacing.md};
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transform: translateY(${({ $visible }) => ($visible ? '0' : '28px')});
+  transition: opacity 0.6s ease, transform 0.6s ease;
 
   ${media.tablet} {
     padding: ${({ theme }) => theme.spacing.section} ${({ theme }) => theme.spacing.xl};
@@ -30,10 +33,22 @@ export const SectionTitle = styled.h2`
     5vw,
     ${({ theme }) => theme.typography.fontSize.xxl}
   );
-  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  font-style: italic;
   color: ${({ theme }) => theme.colors.text.primary};
   text-align: center;
   margin: 0;
+
+  &::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: ${({ theme }) => theme.colors.secondary};
+    border-radius: 2px;
+    margin: ${({ theme }) => theme.spacing.sm} auto 0;
+    opacity: 0.7;
+  }
 `
 
 export const SectionSubtitle = styled.p`
@@ -41,7 +56,7 @@ export const SectionSubtitle = styled.p`
   font-size: ${({ theme }) => theme.typography.fontSize.md};
   color: ${({ theme }) => theme.colors.text.secondary};
   text-align: center;
-  margin: -${({ theme }) => theme.spacing.md} 0 0;
+  margin: 0;
 `
 
 // ── Filter bar ────────────────────────────────────────────────────────────────
@@ -49,8 +64,15 @@ export const SectionSubtitle = styled.p`
 export const FilterBar = styled.div`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: ${({ theme }) => theme.spacing.sm};
   flex-wrap: wrap;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.surfaceAlt};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
+  border-radius: ${({ theme }) => theme.borderRadius.pill};
+  width: fit-content;
+  margin: 0 auto;
 `
 
 export const FilterLabel = styled.span`
@@ -60,19 +82,21 @@ export const FilterLabel = styled.span`
 `
 
 export const SortSelect = styled.select`
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  border: none;
   border-radius: ${({ theme }) => theme.borderRadius.pill};
   font-family: ${({ theme }) => theme.typography.fontFamily.sans};
   font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
   color: ${({ theme }) => theme.colors.text.primary};
-  background: ${({ theme }) => theme.colors.surface};
+  background: transparent;
   cursor: pointer;
   outline: none;
-  transition: border-color ${({ theme }) => theme.transitions.fast};
 
   &:focus {
-    border-color: ${({ theme }) => theme.colors.primary};
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: 2px;
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
   }
 `
 

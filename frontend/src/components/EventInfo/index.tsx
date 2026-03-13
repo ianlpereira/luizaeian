@@ -1,5 +1,6 @@
 import { EventCard } from '@/components/EventCard'
 import { eventInfo } from '@/data/event'
+import { useScrollFadeIn } from '@/hooks/useScrollFadeIn'
 import * as S from './styles'
 
 /**
@@ -7,6 +8,8 @@ import * as S from './styles'
  * e strip de dress code.
  */
 export function EventInfo() {
+  const { ref, isVisible } = useScrollFadeIn()
+
   const dateFormatted = new Date(`${eventInfo.date}T00:00:00`).toLocaleDateString(
     'pt-BR',
     { day: '2-digit', month: 'long', year: 'numeric' },
@@ -14,7 +17,7 @@ export function EventInfo() {
   const timeLabel = `${dateFormatted} — ${eventInfo.time.replace(':', 'h')}min`
 
   return (
-    <S.Section id="local">
+    <S.Section id="local" ref={ref as never} $visible={isVisible}>
       <S.Inner>
         <S.SectionTitle>Onde & Quando</S.SectionTitle>
 
