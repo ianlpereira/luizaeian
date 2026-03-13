@@ -267,6 +267,7 @@ export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
               giftTitle={gift.title}
               giftPrice={gift.price}
               buyerName={formValues.buyer_name}
+              payerEmail={formValues.payer_email}
               message={formValues.message || undefined}
               onPay={handleCardPay}
               onBack={() => setStep('method')}

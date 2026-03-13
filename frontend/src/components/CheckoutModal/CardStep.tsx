@@ -26,6 +26,7 @@ interface CardStepProps {
   giftTitle: string
   giftPrice: number
   buyerName: string
+  payerEmail: string
   message?: string
   onPay: (payload: CreatePaymentPayload) => void
   onBack: () => void
@@ -38,6 +39,7 @@ export function CardStep({
   giftTitle,
   giftPrice,
   buyerName,
+  payerEmail,
   message,
   onPay,
   onBack,
@@ -68,7 +70,7 @@ export function CardStep({
           {
             initialization: {
               amount: giftPrice,
-              payer: { email: 'convidado@luizaeian.com' },
+              payer: { email: payerEmail },
             },
             customization: {
               visual: { hideFormTitle: true },
@@ -85,6 +87,7 @@ export function CardStep({
                 onPay({
                   gift_id: giftId,
                   buyer_name: buyerName,
+                  payer_email: payerEmail,
                   message,
                   method: 'credit_card',
                   card_token: formData.token,
@@ -120,7 +123,7 @@ export function CardStep({
         brickRef.current = null
       }
     }
-  }, [giftId, giftPrice, buyerName, message, onPay])
+  }, [giftId, giftPrice, buyerName, payerEmail, message, onPay])
 
   return (
     <>
@@ -159,12 +162,34 @@ export function CardStep({
         <S.BrickSkeleton aria-busy="true" aria-label="Carregando formulário de pagamento…" />
       )}
 
-      {/* Container do MP Brick — sempre presente para o SDK montar aqui */}
-      <div
-        id={BRICK_CONTAINER_ID}
-        style={{ minHeight: loading ? 0 : undefined }}
-        aria-label="Formulário de pagamento com cartão"
-      />
+      {/* Container do MP Brick com overlay durante processamento */}
+      <div style={{ position: 'relative' }}>
+        <div
+          id={BRICK_CONTAINER_ID}
+          style={{ minHeight: loading ? 0 : undefined }}
+          aria-label="Formulário de pagamento com cartão"
+        />
+        {isPending && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(255,255,255,0.75)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              zIndex: 10,
+              fontSize: '0.95rem',
+              color: '#555',
+              gap: '8px',
+            }}
+            aria-live="polite"
+          >
+            ⏳ Processando pagamento…
+          </div>
+        )}
+      </div>
 
       {/* Botão desabilitado durante processamento */}
       {isPending && (
