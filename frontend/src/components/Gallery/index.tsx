@@ -17,8 +17,6 @@ export function Gallery({ images }: GalleryProps) {
     <S.Section id="galeria" ref={ref as never} $visible={isVisible}>
       <S.Header>
         <S.SectionLabel>Pré-Wedding</S.SectionLabel>
-        <S.Title>Nossa História</S.Title>
-        <S.Subtitle>Momentos especiais que guardaremos para sempre</S.Subtitle>
       </S.Header>
 
       <S.Grid>
