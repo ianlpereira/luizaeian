@@ -41,10 +41,16 @@
 - **US:** US 4.1, US 4.2
 - **Status:** ✅ Completo
 
-### �️ ÉPICO 6: Validação e Moderação de Conteúdo
+### 🛡️ ÉPICO 6: Validação e Moderação de Conteúdo
 - **Arquivo:** `EPIC-6-PLANNING.md`
 - **Escopo:** Deduplicação de RSVP por nome + e-mail · Filtro de palavrão no Mural
 - **US:** US 5.1, US 5.2
+- **Status:** 🔲 Planejado
+
+### 💳 ÉPICO 7: Gateway de Pagamento Real (Cartão & Pix)
+- **Arquivo:** `EPIC-7-PLANNING.md`
+- **Escopo:** Integração Mercado Pago · Pix dinâmico com QR code · Cartão de crédito com MP Brick · Webhook de confirmação
+- **US:** US 6.1, US 6.2, US 6.3
 - **Status:** 🔲 Planejado
 
 - `STATUS.md` — Checklist geral de progresso
