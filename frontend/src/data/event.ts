@@ -27,7 +27,7 @@ export const eventInfo: EventInfo = {
     name2: 'Ian',
   },
   // ⚠️ Atualize com a data e local reais antes do go-live
-  date: '2026-11-07',
+  date: '2026-10-31',
   time: '18:00',
   dressCode: 'Traje social — tons neutros e pastel',
   ceremony: {
