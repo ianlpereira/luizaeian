@@ -40,6 +40,39 @@ def _sanitize(value: str | None) -> str | None:
     return html.escape(value.strip())
 
 
+# Mapeamento de status_detail do MP para mensagens amigáveis em português
+_STATUS_DETAIL_MESSAGES: dict[str, str] = {
+    "accredited": "Pagamento aprovado com sucesso! 🎉",
+    "pending_contingency": "Seu pagamento está em processamento. Você receberá a confirmação em breve.",
+    "pending_review_manual": "Seu pagamento está sendo revisado. Você receberá a confirmação em até 2 dias úteis.",
+    "cc_rejected_bad_filled_card_number": "Número do cartão inválido. Verifique os dados e tente novamente.",
+    "cc_rejected_bad_filled_date": "Data de validade inválida. Verifique os dados e tente novamente.",
+    "cc_rejected_bad_filled_other": "Dados do cartão inválidos. Verifique as informações e tente novamente.",
+    "cc_rejected_bad_filled_security_code": "Código de segurança (CVV) inválido. Verifique e tente novamente.",
+    "cc_rejected_blacklist": "Não foi possível processar o pagamento com este cartão.",
+    "cc_rejected_call_for_authorize": "Pagamento não autorizado. Entre em contato com seu banco.",
+    "cc_rejected_card_disabled": "Cartão desativado. Entre em contato com seu banco.",
+    "cc_rejected_card_error": "Erro ao processar o cartão. Tente novamente ou use outro cartão.",
+    "cc_rejected_duplicated_payment": "Pagamento duplicado detectado. Verifique se já realizou este pagamento.",
+    "cc_rejected_high_risk": "Pagamento recusado por motivos de segurança. Tente outro cartão.",
+    "cc_rejected_insufficient_amount": "Saldo insuficiente. Verifique o limite do cartão ou use outro.",
+    "cc_rejected_invalid_installments": "Número de parcelas inválido para este cartão.",
+    "cc_rejected_max_attempts": "Número máximo de tentativas atingido. Tente novamente em 24h.",
+    "cc_rejected_other_reason": "Pagamento recusado. Tente outro cartão ou entre em contato com seu banco.",
+}
+
+
+def _status_detail_to_message(detail: str | None, status: str) -> str | None:
+    """Converte o status_detail do MP em mensagem amigável para o usuário."""
+    if detail and detail in _STATUS_DETAIL_MESSAGES:
+        return _STATUS_DETAIL_MESSAGES[detail]
+    if status == "approved":
+        return "Pagamento aprovado com sucesso! 🎉"
+    if status in ("rejected", "cancelled"):
+        return "Pagamento recusado. Tente outro cartão ou entre em contato com seu banco."
+    return None
+
+
 # ── Criar pagamento ───────────────────────────────────────────────────────────
 
 async def create_payment(
@@ -77,6 +110,17 @@ async def create_payment(
     safe_name = _sanitize(payload.buyer_name) or ""
     safe_message = _sanitize(payload.message)
 
+    # 4. Modo mock (dev sem credenciais TEST- do MP)
+    if settings.MP_MOCK:
+        if payload.method == "pix":
+            return await _mock_pix_payment(
+                gift=gift, buyer_name=safe_name, message=safe_message, db=db,
+            )
+        # mock cartão: aprovação imediata
+        return await _mock_card_payment(
+            gift=gift, buyer_name=safe_name, message=safe_message, db=db,
+        )
+
     sdk = get_mp_sdk()
 
     if payload.method == "pix":
@@ -98,6 +142,80 @@ async def create_payment(
         )
 
 
+async def _mock_pix_payment(
+    gift: Gift,
+    buyer_name: str,
+    message: str | None,
+    db: AsyncSession,
+) -> PaymentCreateOut:
+    """Simula um pagamento Pix sem chamar a API do Mercado Pago (dev/CI)."""
+    import random
+    fake_mp_id = random.randint(10_000_000, 99_999_999)
+    expires_dt = datetime.now(timezone.utc) + timedelta(minutes=settings.MP_PIX_EXPIRATION_MINUTES)
+    # QR code SVG fake em base64
+    fake_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+    payment = Payment(
+        gift_id=gift.id,
+        mp_payment_id=fake_mp_id,
+        method="pix",
+        status=PaymentStatus.PENDING,
+        amount=Decimal(str(gift.price)),
+        buyer_name=buyer_name,
+        message=message,
+    )
+    db.add(payment)
+    await db.flush()
+    await db.refresh(payment)
+
+    logger.info("MOCK Pix criado: payment_id=%s mp_id=%s", payment.id, fake_mp_id)
+
+    return PaymentCreateOut(
+        payment_id=str(payment.id),
+        mp_payment_id=fake_mp_id,
+        status=PaymentStatus.PENDING,
+        method="pix",
+        qr_code="00020126580014br.gov.bcb.pix0136MOCK-KEY-FAKE-PIX-COPIA-COLA5204000053039865802BR5925Luiza e Ian Casamento6009Sao Paulo62070503***6304ABCD",
+        qr_code_base64=fake_b64,
+        expires_at=expires_dt,
+    )
+
+
+async def _mock_card_payment(
+    gift: Gift,
+    buyer_name: str,
+    message: str | None,
+    db: AsyncSession,
+) -> PaymentCreateOut:
+    """Simula um pagamento com cartão aprovado (dev/CI)."""
+    import random
+    fake_mp_id = random.randint(10_000_000, 99_999_999)
+
+    payment = Payment(
+        gift_id=gift.id,
+        mp_payment_id=fake_mp_id,
+        method="credit_card",
+        status=PaymentStatus.APPROVED,
+        amount=Decimal(str(gift.price)),
+        buyer_name=buyer_name,
+        message=message,
+    )
+    db.add(payment)
+    await db.flush()
+    # Marca presente como comprado imediatamente (mock aprova na hora)
+    await _fulfill_gift(gift, buyer_name, message, db)
+    await db.refresh(payment)
+
+    logger.info("MOCK Cartão aprovado: payment_id=%s mp_id=%s", payment.id, fake_mp_id)
+
+    return PaymentCreateOut(
+        payment_id=str(payment.id),
+        mp_payment_id=fake_mp_id,
+        status=PaymentStatus.APPROVED,
+        method="credit_card",
+    )
+
+
 async def _create_pix_payment(
     gift: Gift,
     buyer_name: str,
@@ -108,14 +226,41 @@ async def _create_pix_payment(
     """Cria um pagamento Pix dinâmico no Mercado Pago."""
     expires_at_str = _format_expiration(settings.MP_PIX_EXPIRATION_MINUTES)
 
+    # Divide o nome do comprador em primeiro e sobrenome
+    name_parts = buyer_name.strip().split(" ", 1)
+    payer_first = name_parts[0]
+    payer_last = name_parts[1] if len(name_parts) > 1 else payer_first
+
     mp_request = {
+        # Campos obrigatórios do checklist de qualidade MP
         "transaction_amount": float(gift.price),
         "description": f"Presente: {gift.title}",
+        "statement_descriptor": settings.MP_STATEMENT_DESCRIPTOR,
         "payment_method_id": "pix",
         "date_of_expiration": expires_at_str,
+        "notification_url": f"{settings.MP_BACK_URL}/api/payments/webhook",
+        "external_reference": str(gift.id),
         "payer": {
-            "email": "convidado@luizaeian.com",  # e-mail genérico para Pix
-            "first_name": buyer_name,
+            "email": settings.MP_TEST_PAYER_EMAIL,
+            "first_name": payer_first,
+            "last_name": payer_last,
+        },
+        # Campos do item — melhoram score antifraude e exibição no painel MP
+        "additional_info": {
+            "items": [
+                {
+                    "id": str(gift.id),
+                    "title": gift.title,
+                    "description": gift.title,
+                    "category_id": "gift",
+                    "quantity": 1,
+                    "unit_price": float(gift.price),
+                }
+            ],
+            "payer": {
+                "first_name": payer_first,
+                "last_name": payer_last,
+            },
         },
         "metadata": {
             "gift_id": str(gift.id),
@@ -183,17 +328,51 @@ async def _create_card_payment(
     db: AsyncSession,
 ) -> PaymentCreateOut:
     """Cria um pagamento com cartão de crédito via token do MP Brick."""
+    # Divide o nome do comprador em primeiro e sobrenome
+    name_parts = buyer_name.strip().split(" ", 1)
+    payer_first = name_parts[0]
+    payer_last = payload.payer_last_name or (name_parts[1] if len(name_parts) > 1 else payer_first)
+
+    payer: dict = {
+        "email": settings.MP_TEST_PAYER_EMAIL,
+        "first_name": payer_first,
+        "last_name": payer_last,
+    }
+    # CPF do pagador — melhora aprovação e reduz rejeições por antifraude
+    if payload.payer_cpf:
+        cpf_digits = payload.payer_cpf.replace(".", "").replace("-", "").strip()
+        payer["identification"] = {"type": "CPF", "number": cpf_digits}
+
     mp_request = {
+        # Campos obrigatórios do checklist de qualidade MP
         "transaction_amount": float(gift.price),
         "token": payload.card_token,
         "description": f"Presente: {gift.title}",
+        "statement_descriptor": settings.MP_STATEMENT_DESCRIPTOR,
         "installments": payload.installments or 1,
         "payment_method_id": payload.payment_method_id,
-        "issuer_id": payload.issuer_id,
         "capture": True,
-        "payer": {
-            "email": "convidado@luizaeian.com",
-            "first_name": buyer_name,
+        # binary_mode: aprovação instantânea (boa prática MP para presentes de casamento)
+        "binary_mode": True,
+        "notification_url": f"{settings.MP_BACK_URL}/api/payments/webhook",
+        "external_reference": str(gift.id),
+        "payer": payer,
+        # Campos do item — melhoram score antifraude e exibição no painel MP
+        "additional_info": {
+            "items": [
+                {
+                    "id": str(gift.id),
+                    "title": gift.title,
+                    "description": gift.title,
+                    "category_id": "gift",
+                    "quantity": 1,
+                    "unit_price": float(gift.price),
+                }
+            ],
+            "payer": {
+                "first_name": payer_first,
+                "last_name": payer_last,
+            },
         },
         "metadata": {
             "gift_id": str(gift.id),
@@ -217,6 +396,7 @@ async def _create_card_payment(
     mp_status = response_body.get("status", "pending")
     internal_status = PaymentStatus.from_mp(mp_status)
     detail_msg = response_body.get("status_detail")
+    user_msg = _status_detail_to_message(detail_msg, internal_status)
 
     # Persiste no banco
     payment = Payment(
@@ -230,7 +410,7 @@ async def _create_card_payment(
     )
     db.add(payment)
 
-    # Se o cartão foi aprovado instantaneamente (raro, mas possível)
+    # Se o cartão foi aprovado instantaneamente (binary_mode=True → aprovação imediata)
     if internal_status == PaymentStatus.APPROVED:
         await _fulfill_gift(gift, buyer_name, message, db)
 
@@ -243,6 +423,7 @@ async def _create_card_payment(
         status=internal_status,
         method="credit_card",
         detail=detail_msg,
+        user_message=user_msg,
     )
 
 

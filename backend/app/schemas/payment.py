@@ -32,6 +32,10 @@ class PaymentCreateIn(BaseModel):
     payment_method_id: str | None = None   # ex: "visa", "master", "elo"
     issuer_id: str | None = None           # ID do banco emissor
 
+    # Dados opcionais do pagador — melhoram aprovação e reduzem fraudes
+    payer_last_name: str | None = Field(default=None, max_length=100)
+    payer_cpf: str | None = Field(default=None, max_length=14)  # ex: "123.456.789-09"
+
     @model_validator(mode="after")
     def validate_card_fields(self) -> "PaymentCreateIn":
         if self.method == "credit_card":
@@ -57,6 +61,7 @@ class PaymentCreateOut(BaseModel):
 
     # Apenas cartão / erros
     detail: str | None = None            # Mensagem do MP em caso de recusa
+    user_message: str | None = None      # Mensagem amigável para exibir ao usuário
 
 
 # ── Response: status do pagamento ─────────────────────────────────────────────

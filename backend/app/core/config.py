@@ -47,6 +47,15 @@ class Settings(BaseSettings):
     MP_PIX_EXPIRATION_MINUTES: int = 30
     # Segredo HMAC para validar assinatura dos webhooks do Mercado Pago
     MP_WEBHOOK_SECRET: str = ""
+    # E-mail do pagador de teste (deve ser diferente do e-mail do vendedor/conta MP)
+    # Usado apenas em ambiente de testes para satisfazer a validação do MP
+    MP_TEST_PAYER_EMAIL: str = "test_user_payer@testuser.com"
+    # Texto exibido na fatura do cartão (máx. 22 chars) — reduz chargebacks
+    MP_STATEMENT_DESCRIPTOR: str = "LUIZA E IAN"
+    # URL base para back_urls do Checkout Pro / notificações de retorno
+    MP_BACK_URL: str = "https://luizaeian.com"
+    # Mock local: simula respostas do MP sem chamar a API real (útil para dev sem credenciais TEST-)
+    MP_MOCK: bool = False
 
     class Config:
         env_file = ".env"

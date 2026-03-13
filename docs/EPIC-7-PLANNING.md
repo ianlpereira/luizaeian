@@ -639,6 +639,82 @@ Tasks:
 
 ---
 
+## Melhorias de Qualidade MP (Checklist de Certificação)
+
+Campos avaliados pelo Mercado Pago para aprovar os padrões de qualidade da integração.
+Resultado obtido via `mcp_my-mcp-server_quality_checklist` em 13/03/2026.
+
+### ✅ Campos Obrigatórios — implementados
+
+| Campo (API Name) | Status | Onde |
+|---|---|---|
+| `items.quantity` | ✅ | `additional_info.items[0].quantity = 1` |
+| `items.unit_price` | ✅ | `additional_info.items[0].unit_price` |
+| `items.title` | ✅ | `additional_info.items[0].title` |
+| `items.id` | ✅ | `additional_info.items[0].id = str(gift.id)` |
+| `items.description` | ✅ | `additional_info.items[0].description` |
+| `items.category_id` | ✅ | `additional_info.items[0].category_id = "gift"` |
+| `statement_descriptor` | ✅ | `settings.MP_STATEMENT_DESCRIPTOR` (padrão: "LUIZA E IAN") |
+| `notification_url` (webhooks) | ✅ | `settings.MP_BACK_URL + "/api/payments/webhook"` |
+| `external_reference` | ✅ | `str(gift.id)` |
+| `payer.email` | ✅ | `settings.MP_TEST_PAYER_EMAIL` |
+| `payer.first_name` | ✅ | derivado de `buyer_name` (split no espaço) |
+| `payer.last_name` | ✅ | derivado de `buyer_name` (split no espaço) |
+| `back_end_sdk` | ✅ | `mercadopago>=2.2.0` |
+
+### 💡 Boas Práticas — implementadas
+
+| Campo (API Name) | Status | Onde |
+|---|---|---|
+| `binary_mode = True` | ✅ | cartão — aprovação instantânea (sem status "in_process") |
+| `date_of_expiration` | ✅ | Pix — `MP_PIX_EXPIRATION_MINUTES` (padrão: 30 min) |
+| `payer.identification` (CPF) | ✅ | campo opcional `payer_cpf` no `PaymentCreateIn` |
+| `response_messages` | ✅ | `user_message` no `PaymentCreateOut` — 30+ mensagens amigáveis mapeadas de `status_detail` |
+| `modal` | ✅ | checkout dentro do modal, sem redirecionamento |
+| `back_end_sdk` JS v2 | ✅ | `loadMercadoPago()` carrega `@mercadopago/sdk-js` dinamicamente |
+
+### 🔲 Boas Práticas — não implementadas (fora do escopo)
+
+| Campo | Motivo |
+|---|---|
+| `back_urls` | Aplicável apenas ao Checkout Pro; esta integração usa Checkout Bricks (sem redirecionamento) |
+| `binary_mode` no Pix | Pix não suporta `binary_mode` (fluxo é sempre assíncrono via webhook) |
+| `excluded_payment_methods/types` | Irrelevante — esta integração já define exatamente os métodos aceitos (Pix e cartão) |
+| `shipment_amount` | Lista de presentes — sem frete |
+| `max_installments` | Controlado pelo MP Brick via configuração do componente frontend |
+| `expiration` (vigência preferência) | Pix já usa `date_of_expiration`; cartão com `binary_mode=true` não expira |
+| `cancellation_api` | Futuro — cancelar pagamentos pendentes via API |
+| `refunds_api` | Futuro — processar estornos via API |
+| `chargebacks_api` | Futuro — gerenciar contestações via API |
+| `settlement / release reports` | Futuro — painel administrativo |
+| `marketing_information` | Fora de escopo — sem campanhas de Ads |
+| `logos` | Futuro — adicionar logo MP no modal de checkout |
+
+### Novas Variáveis de Ambiente
+
+```env
+# Texto na fatura do cartão (máx. 22 chars) — reduz contestações
+MP_STATEMENT_DESCRIPTOR=LUIZA E IAN
+
+# URL base do site para notification_url do webhook
+MP_BACK_URL=https://luizaeian.com
+```
+
+### Novos Campos no Schema `PaymentCreateIn`
+
+```python
+payer_last_name: str | None    # sobrenome do comprador (opcional — derivado do buyer_name por padrão)
+payer_cpf: str | None          # CPF para payer.identification (opcional — melhora aprovação)
+```
+
+### Novo Campo no Schema `PaymentCreateOut`
+
+```python
+user_message: str | None       # mensagem amigável traduzida do status_detail do MP
+```
+
+---
+
 ## NFRs Cobertos neste Épico
 
 | Tag | Requisito | Implementação |
