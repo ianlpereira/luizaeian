@@ -18,6 +18,7 @@ class Gift(UUIDMixin, TimestampMixin, Base):
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     stock_limit: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     purchased: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     purchases: Mapped[list["GiftPurchase"]] = relationship(
         "GiftPurchase", back_populates="gift", lazy="select"

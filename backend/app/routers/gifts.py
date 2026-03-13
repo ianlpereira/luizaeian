@@ -26,6 +26,9 @@ async def list_gifts(
     if category:
         stmt = stmt.where(Gift.category == category)
 
+    # Sempre oculta presentes marcados como hidden (testes, rascunhos, etc.)
+    stmt = stmt.where(Gift.hidden == False)  # noqa: E712
+
     if sort == "asc":
         stmt = stmt.order_by(Gift.price.asc())
     else:
