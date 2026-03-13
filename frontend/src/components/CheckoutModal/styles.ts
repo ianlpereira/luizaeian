@@ -212,3 +212,220 @@ export const ErrorBanner = styled.p`
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   margin: 0;
 `
+
+// ── Step progress dots ────────────────────────────────────────────────────────
+
+export const ProgressDots = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+`
+
+export const Dot = styled.span<{ $active?: boolean; $done?: boolean }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: ${({ $active, $done, theme }) =>
+    $active || $done ? theme.colors.primary : theme.colors.borderLight};
+  transition: background 250ms ease, transform 250ms ease;
+  transform: ${({ $active }) => ($active ? 'scale(1.35)' : 'scale(1)')};
+`
+
+export const DotLine = styled.span`
+  flex: 1;
+  max-width: 32px;
+  height: 1px;
+  background: ${({ theme }) => theme.colors.borderLight};
+`
+
+// ── Gift preview strip (step 2) ───────────────────────────────────────────────
+
+export const GiftPreview = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.surfaceAlt};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
+`
+
+export const GiftPreviewImg = styled.img`
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  flex-shrink: 0;
+  background: ${({ theme }) => theme.colors.border};
+`
+
+export const GiftPreviewInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`
+
+export const GiftPreviewName = styled.span`
+  font-family: ${({ theme }) => theme.typography.fontFamily.serif};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  color: ${({ theme }) => theme.colors.text.primary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`
+
+export const GiftPreviewPrice = styled.span`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
+  color: ${({ theme }) => theme.colors.primary};
+`
+
+// ── Pix payment box ───────────────────────────────────────────────────────────
+
+export const PaymentBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+`
+
+export const PaymentTitle = styled.p`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  text-align: center;
+  margin: 0;
+`
+
+export const QrWrapper = styled.div`
+  width: 160px;
+  height: 160px;
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: ${({ theme }) => theme.colors.surface};
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  ${media.tablet} {
+    width: 180px;
+    height: 180px;
+  }
+`
+
+export const QrPlaceholder = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+  width: 100%;
+  height: 100%;
+  font-size: 40px;
+  color: ${({ theme }) => theme.colors.text.muted};
+`
+
+export const PixKeyBox = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.surfaceAlt};
+  border: 1px dashed ${({ theme }) => theme.colors.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+`
+
+export const PixKeyLabel = styled.span`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  color: ${({ theme }) => theme.colors.text.muted};
+  flex-shrink: 0;
+`
+
+export const PixKeyValue = styled.span`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  color: ${({ theme }) => theme.colors.text.primary};
+  flex: 1;
+  word-break: break-all;
+`
+
+export const CopyButton = styled.button<{ $copied?: boolean }>`
+  flex-shrink: 0;
+  padding: 4px ${({ theme }) => theme.spacing.sm};
+  background: ${({ $copied, theme }) =>
+    $copied ? theme.colors.success : theme.colors.primary};
+  color: ${({ theme }) => theme.colors.text.inverse};
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  cursor: pointer;
+  transition: background 200ms ease;
+  white-space: nowrap;
+`
+
+export const PaymentHint = styled.p`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-align: center;
+  margin: 0;
+  line-height: ${({ theme }) => theme.typography.lineHeight.relaxed};
+`
+
+// ── Confirm payment button ────────────────────────────────────────────────────
+
+export const ConfirmButton = styled.button`
+  width: 100%;
+  padding: ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.text.inverse};
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.pill};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  cursor: pointer;
+  transition: background ${({ theme }) => theme.transitions.fast};
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.colors.primaryHover};
+  }
+
+  &:disabled {
+    background: ${({ theme }) => theme.colors.text.muted};
+    cursor: not-allowed;
+  }
+`
+
+export const BackButton = styled.button`
+  width: 100%;
+  padding: ${({ theme }) => theme.spacing.sm};
+  background: none;
+  color: ${({ theme }) => theme.colors.text.muted};
+  border: none;
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  cursor: pointer;
+  transition: color ${({ theme }) => theme.transitions.fast};
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.text.primary};
+  }
+`
