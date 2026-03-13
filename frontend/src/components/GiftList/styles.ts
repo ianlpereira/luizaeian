@@ -197,3 +197,66 @@ export const StateMessage = styled.p`
   grid-column: 1 / -1;
   padding: ${({ theme }) => theme.spacing.xl} 0;
 `
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+
+export const PaginationRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+  flex-wrap: wrap;
+`
+
+export const PaginationButton = styled.button<{ $active?: boolean; $nav?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: ${({ $nav }) => ($nav ? '36px' : '36px')};
+  height: 36px;
+  padding: 0 ${({ $nav }) => ($nav ? '10px' : '0')};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  border: 1.5px solid ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.border};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.surface};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.text.inverse : theme.colors.text.secondary};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  cursor: pointer;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 150ms ease;
+
+  &:hover:not(:disabled) {
+    border-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ $active, theme }) =>
+      $active ? theme.colors.text.inverse : theme.colors.primary};
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+`
+
+export const PaginationEllipsis = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  color: ${({ theme }) => theme.colors.text.muted};
+  user-select: none;
+`
