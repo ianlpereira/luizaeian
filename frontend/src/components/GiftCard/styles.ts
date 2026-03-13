@@ -66,11 +66,15 @@ export const SoldOutBadge = styled.span`
 // ── Body ──────────────────────────────────────────────────────────────────────
 
 export const Body = styled.div`
-  padding: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.sm};
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.xs};
   flex: 1;
+
+  ${media.phoneLg} {
+    padding: ${({ theme }) => theme.spacing.md};
+  }
 `
 
 export const Category = styled.span`
@@ -84,19 +88,27 @@ export const Category = styled.span`
 
 export const Title = styled.h3`
   font-family: ${({ theme }) => theme.typography.fontFamily.serif};
-  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
   font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
   color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
   line-height: ${({ theme }) => theme.typography.lineHeight.tight};
+
+  ${media.phoneLg} {
+    font-size: ${({ theme }) => theme.typography.fontSize.md};
+  }
 `
 
 export const Price = styled.p`
   font-family: ${({ theme }) => theme.typography.fontFamily.sans};
-  font-size: ${({ theme }) => theme.typography.fontSize.lg};
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
   font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
   color: ${({ theme }) => theme.colors.text.primary};
   margin: 0 0 ${({ theme }) => theme.spacing.sm};
+
+  ${media.phoneLg} {
+    font-size: ${({ theme }) => theme.typography.fontSize.lg};
+  }
 `
 
 export const Button = styled.button`

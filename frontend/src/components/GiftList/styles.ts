@@ -104,8 +104,14 @@ export const SortSelect = styled.select`
 
 export const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* Mobile pequeno (< 414px): 1 coluna para evitar cards espremidos */
+  grid-template-columns: 1fr;
   gap: ${({ theme }) => theme.spacing.md};
+
+  /* Phones maiores (≥ 414px): 2 colunas já cabem bem */
+  ${media.phoneLg} {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
   ${media.tablet} {
     grid-template-columns: repeat(3, 1fr);
