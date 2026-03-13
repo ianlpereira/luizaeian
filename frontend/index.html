@@ -12,9 +12,38 @@
     <meta property="og:description" content="Estamos nos casando! Venha celebrar conosco." />
     <meta property="og:type" content="website" />
 
-    <!-- Preconnect para Google Fonts -->
+    <!--
+      PERF: Preconnect + dns-prefetch
+      ─────────────────────────────────
+      • fonts.googleapis.com / fonts.gstatic.com — Google Fonts (already present)
+      • The API domain gets a dns-prefetch so the first API call resolves faster.
+        Change the href below to match your VITE_API_URL domain in production.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://luizaeian-backend.onrender.com" />
+
+    <!--
+      PERF: Preload LCP image
+      ───────────────────────
+      The hero background is the Largest Contentful Paint element.
+      Preloading it with fetchpriority="high" lets the browser start
+      downloading it as early as possible, before the JS bundle is parsed.
+      The `imagesrcset` + `imagesizes` tell the browser which resolution to
+      preload for each viewport width.
+    -->
+    <link
+      rel="preload"
+      as="image"
+      href="/images/Ian y Luiza-1.webp"
+      fetchpriority="high"
+    />
+
+    <!--
+      PERF: Google Fonts with font-display:swap
+      ─────────────────────────────────────────
+      &display=swap prevents invisible text during font load (FOIT → FOUT).
+    -->
     <link
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap"
       rel="stylesheet"

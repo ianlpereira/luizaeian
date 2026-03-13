@@ -6,15 +6,21 @@ import type { MessageFormValues } from '@/components/MessageForm/schema'
 
 /**
  * Busca todas as mensagens do mural via GET /api/messages.
- * Polling a cada 10 s substitui o Supabase Realtime — suficiente para
- * o uso pontual de um site de casamento (não há requisito de < 1 s de latência).
+ *
+ * Polling strategy:
+ *  • Tab visible  → poll every 10 s (good UX for a wedding day).
+ *  • Tab hidden   → polling is suspended via `refetchIntervalInBackground: false`
+ *    combined with `refetchOnWindowFocus: true`. This means we stop burning
+ *    bandwidth and battery when the guest switches to another tab, and we
+ *    refresh immediately when they come back.
  */
 export function useMessages() {
   return useQuery({
     queryKey: ['messages'],
     queryFn: () => api.get<Message[]>('/api/messages'),
     staleTime: 0,
-    refetchInterval: 10_000,   // polling 10 s
+    refetchInterval: 10_000,
+    refetchIntervalInBackground: false, // PERF: pause polling when tab is hidden
     refetchOnWindowFocus: true,
   })
 }

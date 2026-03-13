@@ -5,6 +5,15 @@ export const Page = styled.div`
   width: 100%;
 `
 
+/**
+ * Minimal-height placeholder shown by <Suspense> while a lazy section loads.
+ * Prevents layout jumping for sections below the fold.
+ */
+export const SectionPlaceholder = styled.div`
+  min-height: 200px;
+  width: 100%;
+`
+
 export const SectionTitle = styled.h2`
   font-family: ${({ theme }) => theme.typography.fontFamily.serif};
   font-size: ${({ theme }) => theme.typography.fontSize.xl};
