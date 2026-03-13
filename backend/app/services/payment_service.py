@@ -481,15 +481,37 @@ async def get_payment_status(payment_id: uuid.UUID, db: AsyncSession) -> Payment
     """
     Retorna o status interno do pagamento sem expor dados sensíveis.
 
+    Sincronização ativa: se o status ainda é pending e o pagamento já tem um
+    mp_payment_id, consulta o MP diretamente para pegar atualizações que o
+    webhook pode ter perdido ou atrasado.
+
     Reconciliação automática: se o pagamento está aprovado mas o presente
     ainda não foi fulfillado (gift_purchases ausente), executa _fulfill_gift.
-    Isso cobre casos em que o webhook falhou, atrasou, ou o status foi
-    alterado diretamente no banco (ex: ambiente de testes/mock).
     """
     payment = await db.get(Payment, payment_id)
     if payment is None:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+
+    # Sincronização com MP: se ainda pending, consulta o status real
+    NON_FINAL = {PaymentStatus.PENDING, PaymentStatus.IN_PROCESS}
+    if payment.status in NON_FINAL and payment.mp_payment_id:
+        try:
+            sdk = get_mp_sdk()
+            response = sdk.payment().get(payment.mp_payment_id)
+            if response.get("status") == 200:
+                mp_status = response["response"].get("status", "pending")
+                synced_status = PaymentStatus.from_mp(mp_status)
+                if synced_status != payment.status:
+                    logger.info(
+                        "Polling: sincronizando payment %s: %s → %s (mp_id=%s)",
+                        payment_id, payment.status, synced_status, payment.mp_payment_id,
+                    )
+                    payment.status = synced_status
+                    db.add(payment)
+                    await db.flush()
+        except Exception as exc:
+            logger.warning("Polling: falha ao consultar MP para payment %s: %s", payment_id, exc)
 
     # Reconciliação: approved sem gift_purchase → fulfilla agora
     if payment.status == PaymentStatus.APPROVED:
