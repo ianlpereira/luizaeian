@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import confetti from 'canvas-confetti'
@@ -238,6 +239,160 @@ export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
         )}
 
       </S.Dialog>
-    </S.Backdrop>
+      </S.Backdrop>
   )
+
+    // Render dentro de um portal para evitar que transform/overflow de ancestrais
+    // impeça o Backdrop de cobrir toda a viewport (problema comum em mobile).
+    if (typeof document !== 'undefined') {
+      return createPortal(
+        (
+          <S.Backdrop onClick={onClose} role="dialog" aria-modal="true" aria-label={`Presentear: ${gift.title}`}>
+            <S.Dialog onClick={(e) => e.stopPropagation()}>
+              {/* ── Header ──────────────────────────────────────────────────── */}
+              <S.Header>
+                <div>
+                  <S.GiftName>{gift.title}</S.GiftName>
+                  <S.Price>{formatBRL(gift.price)}</S.Price>
+                </div>
+                <S.CloseButton onClick={onClose} aria-label="Fechar modal">×</S.CloseButton>
+              </S.Header>
+
+              {/* ── Progress dots ────────────────────────────────────────────── */}
+              {step !== 'success' && (
+                <S.ProgressDots aria-label={`Etapa ${stepIndex + 1} de 2`}>
+                  <S.Dot $active={step === 'form'} $done={stepIndex > 0} />
+                  <S.DotLine />
+                  <S.Dot $active={step === 'payment'} $done={stepIndex > 1} />
+                </S.ProgressDots>
+              )}
+
+              {/* ── Etapa 1: Formulário ──────────────────────────────────────── */}
+              {step === 'form' && (
+                <S.Form onSubmit={handleSubmit(onSubmitForm)} noValidate>
+                  <S.Field>
+                    <label htmlFor="buyer_name">Seu nome *</label>
+                    <input
+                      id="buyer_name"
+                      type="text"
+                      placeholder="Nome completo"
+                      autoComplete="name"
+                      {...register('buyer_name')}
+                    />
+                    {errors.buyer_name && (
+                      <S.ErrorMsg role="alert">{errors.buyer_name.message}</S.ErrorMsg>
+                    )}
+                  </S.Field>
+
+                  <S.Field>
+                    <label htmlFor="message">Mensagem para o casal</label>
+                    <textarea
+                      id="message"
+                      placeholder="Escreva uma mensagem carinhosa… (opcional)"
+                      {...register('message')}
+                    />
+                    {errors.message && (
+                      <S.ErrorMsg role="alert">{errors.message.message}</S.ErrorMsg>
+                    )}
+                  </S.Field>
+
+                  <S.SubmitButton type="submit">
+                    Continuar para pagamento →
+                  </S.SubmitButton>
+                </S.Form>
+              )}
+
+              {/* ── Etapa 2: Pagamento via Pix ───────────────────────────────── */}
+              {step === 'payment' && (
+                <>
+                  {/* Preview do presente escolhido */}
+                  <S.GiftPreview>
+                    <S.GiftPreviewImg
+                      src={gift.image_url ?? '/images/gift-placeholder.webp'}
+                      alt={gift.title}
+                      loading="lazy"
+                    />
+                    <S.GiftPreviewInfo>
+                      <S.GiftPreviewName>{gift.title}</S.GiftPreviewName>
+                      <S.GiftPreviewPrice>{formatBRL(gift.price)}</S.GiftPreviewPrice>
+                    </S.GiftPreviewInfo>
+                  </S.GiftPreview>
+
+                  <S.PaymentBox>
+                    <S.PaymentTitle>
+                      Faça um Pix no valor de <strong>{formatBRL(gift.price)}</strong>
+                    </S.PaymentTitle>
+
+                    {/* QR code ou placeholder */}
+                    <S.QrWrapper>
+                      {pixConfig.qrCodeUrl ? (
+                        <img src={pixConfig.qrCodeUrl} alt="QR Code Pix" />
+                      ) : (
+                        <S.QrPlaceholder>
+                          📲
+                        </S.QrPlaceholder>
+                      )}
+                    </S.QrWrapper>
+
+                    {/* Chave Pix copiável */}
+                    <S.PixKeyBox>
+                      <S.PixKeyLabel>Chave Pix</S.PixKeyLabel>
+                      <S.PixKeyValue>{pixConfig.key}</S.PixKeyValue>
+                      <S.CopyButton
+                        type="button"
+                        $copied={copied}
+                        onClick={handleCopyKey}
+                        aria-label="Copiar chave Pix"
+                      >
+                        {copied ? '✓ Copiado' : 'Copiar'}
+                      </S.CopyButton>
+                    </S.PixKeyBox>
+
+                    <S.PaymentHint>
+                      Favorecido: <strong>{pixConfig.holderName}</strong>
+                      {pixConfig.bank ? ` · ${pixConfig.bank}` : ''}
+                      <br />
+                      Após pagar, clique em "Já paguei" para confirmar o presente.
+                    </S.PaymentHint>
+                  </S.PaymentBox>
+
+                  {error && (
+                    <S.ErrorBanner role="alert">
+                      Ops! Não foi possível registrar o presente. Tente novamente.
+                    </S.ErrorBanner>
+                  )}
+
+                  <S.ConfirmButton
+                    type="button"
+                    disabled={isPending}
+                    onClick={handleConfirmPayment}
+                  >
+                    {isPending ? 'Confirmando…' : 'Já paguei ✓'}
+                  </S.ConfirmButton>
+
+                  <S.BackButton type="button" onClick={() => setStep('form')}>
+                    ← Voltar e editar dados
+                  </S.BackButton>
+                </>
+              )}
+
+              {/* ── Sucesso ──────────────────────────────────────────────────── */}
+              {step === 'success' && (
+                <S.SuccessBox>
+                  <S.SuccessIcon>🎉</S.SuccessIcon>
+                  <S.SuccessText>Presente confirmado!</S.SuccessText>
+                  <S.SuccessSubtext>
+                    Luiza &amp; Ian agradecem seu carinho 💍
+                  </S.SuccessSubtext>
+                </S.SuccessBox>
+              )}
+
+            </S.Dialog>
+          </S.Backdrop>
+        ),
+        document.body,
+      )
+    }
+
+    return null
 }
