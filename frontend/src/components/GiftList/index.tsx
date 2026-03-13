@@ -90,11 +90,14 @@ export function GiftList() {
       })
   }, [allGifts])
 
-  // Aplica shuffle quando random, ou usa a lista já ordenada pela API
+  // Aplica shuffle quando random, ou usa a lista já ordenada pela API;
+  // em seguida, presentes já pagos vão sempre para o final (ordem interna preservada).
   const orderedGifts = useMemo(() => {
     if (!gifts) return []
-    if (filters.sortOrder === 'random') return shuffle(gifts, sessionSeed.current)
-    return gifts
+    const base = filters.sortOrder === 'random'
+      ? shuffle(gifts, sessionSeed.current)
+      : gifts
+    return [...base.filter((g) => !g.purchased), ...base.filter((g) => g.purchased)]
   }, [gifts, filters.sortOrder])
 
   // Paginação client-side
