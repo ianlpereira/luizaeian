@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import confetti from 'canvas-confetti'
 import { useCreatePayment } from '@/hooks/usePayment'
-import { useInstallments } from '@/hooks/useInstallments'
 import { checkoutSchema, type CheckoutFormValues, type PaymentMethodChoice } from './schema'
 import { PixStep } from './PixStep'
 import { CardStep } from './CardStep'
@@ -43,7 +42,6 @@ export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
   const [cardError, setCardError] = useState<string | null>(null)
 
   const { mutate: createPayment, isPending } = useCreatePayment()
-  const { installments: installmentOptions, loading: installmentsLoading } = useInstallments(gift.price)
 
   const {
     register,
@@ -235,36 +233,6 @@ export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
                   <S.MethodSub>Crédito · até 12x</S.MethodSub>
                 </S.MethodCard>
               </S.MethodGrid>
-
-              {/* Tabela de parcelamento — exibida ao selecionar Cartão */}
-              {selectedMethod === 'credit_card' && (
-                installmentsLoading ? (
-                  <S.InstallmentsLoading>Carregando parcelas…</S.InstallmentsLoading>
-                ) : installmentOptions.length > 0 ? (
-                  <S.InstallmentsBox>
-                    <S.InstallmentsHeader>Opções de parcelamento</S.InstallmentsHeader>
-                    {installmentOptions
-                      .filter((opt) =>
-                        opt.installment_rate === 0 || [1, 6, 12].includes(opt.installments)
-                      )
-                      .slice(0, 6)
-                      .map((opt) => {
-                        const noInterest = opt.installment_rate === 0
-                        const amount = formatBRL(opt.installment_amount)
-                        return (
-                          <S.InstallmentRow key={opt.installments} $highlighted={noInterest && opt.installments > 1}>
-                            <S.InstallmentQty>{opt.installments}x</S.InstallmentQty>
-                            <S.InstallmentAmount>{amount}</S.InstallmentAmount>
-                            {noInterest
-                              ? <S.InstallmentBadge>sem juros</S.InstallmentBadge>
-                              : <S.InstallmentTotal>total {formatBRL(opt.total_amount)}</S.InstallmentTotal>
-                            }
-                          </S.InstallmentRow>
-                        )
-                      })}
-                  </S.InstallmentsBox>
-                ) : null
-              )}
 
               <S.MethodContinueButton
                 type="button"

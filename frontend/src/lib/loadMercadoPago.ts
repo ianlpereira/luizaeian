@@ -18,11 +18,6 @@ declare global {
 
 export interface MercadoPagoInstance {
   bricks(): MercadoPagoBricks
-  getInstallments(params: {
-    amount: string
-    bin: string
-    locale?: string
-  }): Promise<InstallmentsResult[]>
 }
 
 export interface MercadoPagoBricks {
@@ -62,21 +57,6 @@ export interface CardPaymentBrickController {
   unmount(): void
 }
 
-// ── Parcelas ──────────────────────────────────────────────────────────────────
-
-export interface InstallmentOption {
-  installments: number
-  installment_amount: number   // valor de cada parcela
-  total_amount: number         // valor total com juros
-  installment_rate: number     // percentual de juros (0 = sem juros)
-  labels: string[]             // ex: ["recommended_installment", "installments_with_no_rate"]
-}
-
-export interface InstallmentsResult {
-  payment_method_id: string
-  payment_type_id: string
-  payer_costs: InstallmentOption[]
-}
 
 // ── Loader ────────────────────────────────────────────────────────────────────
 
