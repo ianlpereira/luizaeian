@@ -15,6 +15,10 @@ export interface CreatePaymentPayload {
   buyer_name: string
   message?: string
   method: PaymentMethod
+  // Dados do pagador — obrigatório pelo MP em produção
+  payer_email?: string
+  payer_last_name?: string
+  payer_cpf?: string
   // Apenas cartão de crédito
   card_token?: string
   installments?: number

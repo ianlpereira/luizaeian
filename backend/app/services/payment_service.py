@@ -128,6 +128,7 @@ async def create_payment(
             gift=gift,
             buyer_name=safe_name,
             message=safe_message,
+            payer_email=payload.payer_email,
             sdk=sdk,
             db=db,
         )
@@ -220,6 +221,7 @@ async def _create_pix_payment(
     gift: Gift,
     buyer_name: str,
     message: str | None,
+    payer_email: str | None,
     sdk,
     db: AsyncSession,
 ) -> PaymentCreateOut:
@@ -241,7 +243,7 @@ async def _create_pix_payment(
         "notification_url": f"{settings.MP_BACK_URL}/api/payments/webhook",
         "external_reference": str(gift.id),
         "payer": {
-            "email": settings.MP_TEST_PAYER_EMAIL,
+            "email": payer_email or settings.MP_TEST_PAYER_EMAIL,
             "first_name": payer_first,
             "last_name": payer_last,
         },
@@ -334,7 +336,7 @@ async def _create_card_payment(
     payer_last = payload.payer_last_name or (name_parts[1] if len(name_parts) > 1 else payer_first)
 
     payer: dict = {
-        "email": settings.MP_TEST_PAYER_EMAIL,
+        "email": payload.payer_email or settings.MP_TEST_PAYER_EMAIL,
         "first_name": payer_first,
         "last_name": payer_last,
     }

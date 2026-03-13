@@ -33,6 +33,7 @@ class PaymentCreateIn(BaseModel):
     issuer_id: str | None = None           # ID do banco emissor
 
     # Dados opcionais do pagador — melhoram aprovação e reduzem fraudes
+    payer_email: str | None = Field(default=None, max_length=254)  # ex: "nome@email.com"
     payer_last_name: str | None = Field(default=None, max_length=100)
     payer_cpf: str | None = Field(default=None, max_length=14)  # ex: "123.456.789-09"
 

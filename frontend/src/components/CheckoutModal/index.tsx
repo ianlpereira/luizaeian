@@ -88,6 +88,7 @@ export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
         {
           gift_id: gift.id,
           buyer_name: formValues.buyer_name,
+          payer_email: formValues.payer_email,
           message: formValues.message || undefined,
           method: 'pix',
         },
@@ -171,6 +172,20 @@ export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
                 />
                 {errors.buyer_name && (
                   <S.ErrorMsg role="alert">{errors.buyer_name.message}</S.ErrorMsg>
+                )}
+              </S.Field>
+
+              <S.Field>
+                <label htmlFor="payer_email">Seu e-mail *</label>
+                <input
+                  id="payer_email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  autoComplete="email"
+                  {...register('payer_email')}
+                />
+                {errors.payer_email && (
+                  <S.ErrorMsg role="alert">{errors.payer_email.message}</S.ErrorMsg>
                 )}
               </S.Field>
 
