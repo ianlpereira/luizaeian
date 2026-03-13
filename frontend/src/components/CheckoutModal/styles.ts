@@ -533,3 +533,72 @@ export const BrickSkeleton = styled.div`
   background-size: 200% 100%;
   animation: ${shimmer} 1.6s ease infinite;
 `
+
+// ── Parcelas: tabela de parcelamento (Etapa 2 — método cartão) ────────────────
+
+export const InstallmentsBox = styled.div`
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  overflow: hidden;
+  margin-top: ${({ theme }) => theme.spacing.xs};
+`
+
+export const InstallmentsHeader = styled.div`
+  background: ${({ theme }) => theme.colors.primary + '12'};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+`
+
+export const InstallmentRow = styled.div<{ $highlighted?: boolean }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  border-top: 1px solid ${({ theme }) => theme.colors.borderLight};
+  background: ${({ $highlighted, theme }) =>
+    $highlighted ? theme.colors.primary + '08' : 'transparent'};
+
+  &:first-of-type {
+    border-top: none;
+  }
+`
+
+export const InstallmentQty = styled.span`
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  color: ${({ theme }) => theme.colors.text.primary};
+  min-width: 28px;
+`
+
+export const InstallmentAmount = styled.span`
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+`
+
+export const InstallmentBadge = styled.span`
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
+  background: ${({ theme }) => theme.colors.primary + '18'};
+  padding: 2px 8px;
+  border-radius: ${({ theme }) => theme.borderRadius.pill};
+`
+
+export const InstallmentTotal = styled.span`
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  color: ${({ theme }) => theme.colors.text.muted};
+`
+
+export const InstallmentsLoading = styled.div`
+  padding: ${({ theme }) => theme.spacing.md};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-align: center;
+`
