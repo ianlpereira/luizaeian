@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
-from typing import List
 from functools import lru_cache
+import json
 
 
 class Settings(BaseSettings):
@@ -19,15 +19,23 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
-    # CORS — lista direta, sem parse manual
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://luizaeian.com",
-        "https://www.luizaeian.com",
-        "https://luizaeian.onrender.com",
-        "https://luizaeian-frontend.onrender.com",
-    ]
+    # CORS — str para evitar conflito de parse com env vars legadas no Render
+    CORS_ORIGINS: str = (
+        "http://localhost:5173,"
+        "http://localhost:3000,"
+        "https://luizaeian.com,"
+        "https://www.luizaeian.com,"
+        "https://luizaeian.onrender.com,"
+        "https://luizaeian-frontend.onrender.com"
+    )
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        v = self.CORS_ORIGINS.strip()
+        # Aceita tanto JSON array quanto string separada por vírgula
+        if v.startswith("["):
+            return json.loads(v)
+        return [o.strip() for o in v.split(",") if o.strip()]
 
     class Config:
         env_file = ".env"

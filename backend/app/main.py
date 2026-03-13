@@ -19,12 +19,12 @@ app = FastAPI(
 )
 
 # Log das origens CORS permitidas (visível nos logs do Render)
-logger.info("CORS allowed origins: %s", settings.CORS_ORIGINS)
+logger.info("CORS allowed origins: %s", settings.cors_origins_list)
 
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
