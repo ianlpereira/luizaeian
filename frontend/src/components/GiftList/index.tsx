@@ -9,24 +9,24 @@ import * as S from './styles'
 const SKELETON_COUNT = 8
 const PAGE_SIZE = 8
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  // categorias da seed atual
-  'Eletrodomésticos':   '🏠',
-  'Sala':               '🛋️',
-  'Quarto':             '🛏️',
-  'Cozinha':            '🍳',
-  'Cama, Mesa e Banho': '🛁',
-  'Decoração':          '🖼️',
-  'Utilidades':         '🧹',
-  'Lua de Mel':         '✈️',
-  // categorias legadas (seed anterior)
-  'Casa':               '🏡',
-  'Cama & Banho':       '🛁',
-  'Eletrônicos':        '📺',
-  'Lazer':              '🎲',
-  'Viagem':             '🗺️',
-  'Engraçado':          '🎉',
-}
+// const CATEGORY_EMOJI: Record<string, string> = {
+//   // categorias da seed atual
+//   'Eletrodomésticos':   '🏠',
+//   'Sala':               '🛋️',
+//   'Quarto':             '🛏️',
+//   'Cozinha':            '🍳',
+//   'Cama, Mesa e Banho': '🛁',
+//   'Decoração':          '🖼️',
+//   'Utilidades':         '🧹',
+//   'Lua de Mel':         '✈️',
+//   // categorias legadas (seed anterior)
+//   'Casa':               '🏡',
+//   'Cama & Banho':       '🛁',
+//   'Eletrônicos':        '📺',
+//   'Lazer':              '🎲',
+//   'Viagem':             '🗺️',
+//   'Engraçado':          '🎉',
+// }
 
 /** Fisher-Yates shuffle imutável — retorna novo array embaralhado. */
 function shuffle<T>(arr: T[], seed: number): T[] {
@@ -70,7 +70,7 @@ export function GiftList() {
   const { ref, isVisible } = useScrollFadeIn()
 
   // Busca SEM filtro de categoria para derivar a lista de categorias disponíveis
-  const { data: allGifts } = useGifts({ sortOrder: 'asc' })
+  // const { data: allGifts } = useGifts({ sortOrder: 'asc' })
   // Busca COM filtros — traz tudo; ordenação/paginação acontece no front
   const { data: gifts, isLoading, isError } = useGifts(filters)
 
@@ -78,17 +78,17 @@ export function GiftList() {
   useEffect(() => { setCurrentPage(1) }, [filters])
 
   // Deriva categorias únicas, na ordem em que aparecem (preserva ordem da seed)
-  const categories = useMemo(() => {
-    if (!allGifts) return []
-    const seen = new Set<string>()
-    return allGifts
-      .map((g) => g.category)
-      .filter((cat) => {
-        if (seen.has(cat)) return false
-        seen.add(cat)
-        return true
-      })
-  }, [allGifts])
+  // const categories = useMemo(() => {
+  //   if (!allGifts) return []
+  //   const seen = new Set<string>()
+  //   return allGifts
+  //     .map((g) => g.category)
+  //     .filter((cat) => {
+  //       if (seen.has(cat)) return false
+  //       seen.add(cat)
+  //       return true
+  //     })
+  // }, [allGifts])
 
   // Aplica shuffle quando random, ou usa a lista já ordenada pela API;
   // em seguida, presentes já pagos vão sempre para o final (ordem interna preservada).
@@ -116,9 +116,9 @@ export function GiftList() {
     [currentPage, totalPages],
   )
 
-  const handleCategoryChange = (category: string | undefined) => {
-    setFilters((prev) => ({ ...prev, category }))
-  }
+  // const handleCategoryChange = (category: string | undefined) => {
+  //   setFilters((prev) => ({ ...prev, category }))
+  // }
 
   const handleSortChange = (e: { target: { value: string } }) => {
     setFilters((prev: GiftFilters) => ({ ...prev, sortOrder: e.target.value as GiftSortOrder }))
@@ -133,7 +133,7 @@ export function GiftList() {
         </S.SectionSubtitle>
 
         {/* Chips de categoria */}
-        {categories.length > 0 && (
+        {/* {categories.length > 0 && (
           <S.CategoryRow>
             <S.CategoryChip
               $active={!filters.category}
@@ -153,7 +153,7 @@ export function GiftList() {
               </S.CategoryChip>
             ))}
           </S.CategoryRow>
-        )}
+        )} */}
 
         {/* Ordenação */}
         <S.FilterBar>
