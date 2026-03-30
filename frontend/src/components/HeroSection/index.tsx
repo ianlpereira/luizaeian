@@ -3,7 +3,7 @@ import { eventInfo } from '@/data/event'
 
 export function HeroSection() {
   const handleScroll = () => {
-    document.getElementById('galeria')?.scrollIntoView({ behavior: 'smooth' })
+    document.getElementById('contagem')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   // Formata a data: "07 de Novembro de 2026"

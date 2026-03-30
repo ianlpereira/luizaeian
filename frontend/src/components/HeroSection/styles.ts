@@ -14,7 +14,7 @@ export const Wrapper = styled.section`
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #1a1a1a; /* fallback enquanto imagem carrega */
+  background-color: #1e2620; /* fallback enquanto imagem carrega */
 `
 
 export const BackgroundImage = styled.img`
@@ -146,7 +146,7 @@ export const ScrollButton = styled.button`
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary};
-    background: rgba(201, 169, 110, 0.15);
+    background: rgba(122, 171, 142, 0.15);
   }
 
   @keyframes bounce {

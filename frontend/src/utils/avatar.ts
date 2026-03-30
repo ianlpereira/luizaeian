@@ -1,11 +1,11 @@
 const AVATAR_COLORS = [
-  '#c9a96e', // dourado principal
-  '#d4a98a', // terracota suave
-  '#b5a89c', // cinza quente
-  '#c4b09e', // bege dourado
-  '#a89b8c', // taupe
-  '#bba89e', // rosê muted
-  '#c0a898', // pêssego muted
+  '#7aab8e', // verde salvia
+  '#d4a0a7', // rosa blush
+  '#a8c5d6', // azul céu
+  '#c9c196', // dourado folha seca
+  '#8eb8a0', // verde menta
+  '#c4b3c8', // lavanda suave
+  '#b5cec0', // verde água
 ]
 
 /**

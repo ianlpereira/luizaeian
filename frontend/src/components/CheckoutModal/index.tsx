@@ -69,7 +69,7 @@ export function CheckoutModal({ gift, onClose }: CheckoutModalProps) {
       particleCount: 140,
       spread: 80,
       origin: { y: 0.55 },
-      colors: ['#c9a96e', '#e8b4b8', '#f5f0e8', '#ffffff'],
+      colors: ['#7aab8e', '#d4a0a7', '#a8c5d6', '#c9c196'],
     })
     setTimeout(onClose, 2500)
   }

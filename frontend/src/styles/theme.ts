@@ -1,31 +1,36 @@
 export const theme = {
   colors: {
-    primary: '#c9a96e',         // dourado principal
-    primaryHover: '#b8943a',    // dourado escuro (hover)
-    primaryLight: '#e8d5b0',    // dourado claro
+    primary: '#7aab8e',         // verde salvia pastel
+    primaryHover: '#5e9474',    // verde salvia escuro (hover)
+    primaryLight: '#c8ddd0',    // verde salvia claro
 
-    secondary: '#e8b4b8',       // rosê gold
-    secondaryLight: '#f5e6d3',  // rosê claro
+    secondary: '#d4a0a7',       // rosa blush pastel
+    secondaryLight: '#f0dce0',  // rosa blush claro
 
-    background: '#faf9f7',      // off-white elegante
+    background: '#f7f9f7',      // off-white com nuance verde
     surface: '#ffffff',
-    surfaceAlt: '#f5f0e8',      // superfície levemente quente
+    surfaceAlt: '#eef3f0',      // superfície levemente verde
 
     text: {
-      primary: '#2c2c2c',
-      secondary: '#7a7a7a',
-      muted: '#b0a898',
+      primary: '#2e3830',
+      secondary: '#6b7d72',
+      muted: '#9aab9f',
       inverse: '#ffffff',
     },
 
-    border: '#e8e0d6',
-    borderLight: '#f0ebe3',
+    border: '#d6e0da',
+    borderLight: '#e8efe9',
 
     overlay: 'rgba(0, 0, 0, 0.45)',
     overlayLight: 'rgba(0, 0, 0, 0.25)',
 
     success: '#7cb87a',
     error: '#c97070',
+
+    // Cores de acento (natureza)
+    accent1: '#a8c5d6',         // azul céu pastel
+    accent2: '#d4a0a7',         // rosa blush
+    accent3: '#c9c196',         // dourado folha seca
   },
 
   typography: {
@@ -80,7 +85,7 @@ export const theme = {
     md: '0 4px 12px rgba(0, 0, 0, 0.08)',
     lg: '0 8px 24px rgba(0, 0, 0, 0.10)',
     xl: '0 16px 40px rgba(0, 0, 0, 0.12)',
-    golden: '0 4px 20px rgba(201, 169, 110, 0.25)',
+    golden: '0 4px 20px rgba(122, 171, 142, 0.25)',
   },
 
   // Mobile-first: breakpoints em min-width

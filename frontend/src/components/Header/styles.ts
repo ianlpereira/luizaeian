@@ -35,10 +35,10 @@ export const Wrapper = styled.header`
   display: flex;
   align-items: center;
   padding: 0 ${({ theme }) => theme.spacing.lg};
-  background: rgba(26, 26, 26, 0.85);
+  background: rgba(30, 38, 32, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(201, 169, 110, 0.15);
+  border-bottom: 1px solid rgba(122, 171, 142, 0.15);
   transition: background ${({ theme }) => theme.transitions.normal};
 
   ${media.tablet} {
@@ -192,8 +192,8 @@ export const Drawer = styled.aside<{ $visible: boolean; $closing: boolean }>`
   bottom: 0;
   z-index: 102;
   width: min(300px, 85vw);
-  background: #1a1a1a;
-  border-left: 1px solid rgba(201, 169, 110, 0.2);
+  background: #1e2620;
+  border-left: 1px solid rgba(122, 171, 142, 0.2);
   padding: 80px ${({ theme }) => theme.spacing.xl} ${({ theme }) => theme.spacing.xl};
   animation: ${({ $closing }) => ($closing ? slideOut : slideIn)} 280ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 
@@ -228,14 +228,14 @@ export const DrawerLink = styled.a`
 
   &:hover, &:focus-visible {
     color: ${({ theme }) => theme.colors.primary};
-    background: rgba(201, 169, 110, 0.08);
+    background: rgba(122, 171, 142, 0.08);
     outline: none;
   }
 `
 
 export const DrawerDivider = styled.hr`
   border: none;
-  border-top: 1px solid rgba(201, 169, 110, 0.15);
+  border-top: 1px solid rgba(122, 171, 142, 0.15);
   margin: ${({ theme }) => theme.spacing.md} 0;
 `
 
