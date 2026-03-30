@@ -1,0 +1,19 @@
+{
+  "name": "Luiza & Ian",
+  "short_name": "L&I",
+  "icons": [
+    {
+      "src": "/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#7aab8e",
+  "background_color": "#f7f9f7",
+  "display": "standalone"
+}
