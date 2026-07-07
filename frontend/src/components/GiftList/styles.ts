@@ -59,6 +59,122 @@ export const SectionSubtitle = styled.p`
   margin: 0;
 `
 
+// ── Channel tabs (online vs. loja física) ─────────────────────────────────────
+
+export const ChannelTabs = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  flex-wrap: wrap;
+`
+
+export const ChannelTab = styled.button<{ $active?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.borderRadius.pill};
+  border: 1.5px solid ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.border};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.primary : theme.colors.surface};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.text.inverse : theme.colors.text.secondary};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  cursor: pointer;
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 150ms ease;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ $active, theme }) =>
+      $active ? theme.colors.text.inverse : theme.colors.primary};
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`
+
+// ── Loja física ────────────────────────────────────────────────────────────────
+
+export const PhysicalCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  max-width: 560px;
+  margin: 0 auto;
+  padding: ${({ theme }) => theme.spacing.xl};
+  background: ${({ theme }) => theme.colors.surfaceAlt};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  text-align: center;
+`
+
+export const PhysicalIcon = styled.span`
+  font-size: 2.5rem;
+`
+
+export const PhysicalTitle = styled.h3`
+  font-family: ${({ theme }) => theme.typography.fontFamily.serif};
+  font-size: ${({ theme }) => theme.typography.fontSize.lg};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin: 0;
+`
+
+export const PhysicalAddress = styled.p`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.md};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin: 0;
+`
+
+export const PhysicalInstructions = styled.p`
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  color: ${({ theme }) => theme.colors.text.muted};
+  line-height: 1.6;
+  margin: 0;
+`
+
+export const PhysicalLinks = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing.sm};
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+`
+
+export const PhysicalLink = styled.a`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
+  border-radius: ${({ theme }) => theme.borderRadius.pill};
+  border: 1.5px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  text-decoration: none;
+  transition: border-color 200ms ease, transform 150ms ease;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+    transform: translateY(-1px);
+  }
+`
+
 // ── Category filter ───────────────────────────────────────────────────────────
 
 export const CategoryRow = styled.div`
