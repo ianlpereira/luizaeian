@@ -2,7 +2,7 @@ import uuid
 import html
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -47,16 +47,14 @@ async def purchase_gift(
 ) -> GiftPurchase:
     """
     Registra a compra de um presente:
-    1. Valida que o presente existe e ainda tem estoque
+    1. Valida que o presente existe
     2. Cria o registro em gift_purchases
-    3. Decrementa stock_limit de forma atômica; marca purchased=True quando stock chega a 0
+    Presentes podem ser comprados quantas vezes forem necessárias, sem limite.
     """
     # 1. Busca e valida o presente
     gift = await db.get(Gift, payload.gift_id)
     if not gift:
         raise HTTPException(status_code=404, detail="Presente não encontrado")
-    if gift.purchased or gift.stock_limit <= 0:
-        raise HTTPException(status_code=409, detail="Presente já esgotado")
 
     # 2. Sanitiza inputs (sec-01: strip de tags HTML)
     safe_name = html.escape(payload.buyer_name.strip())
@@ -69,17 +67,6 @@ async def purchase_gift(
         message=safe_message,
     )
     db.add(purchase)
-
-    # 4. Decrementa stock atomicamente
-    new_stock = max(gift.stock_limit - 1, 0)
-    await db.execute(
-        update(Gift)
-        .where(Gift.id == payload.gift_id)
-        .values(
-            stock_limit=new_stock,
-            purchased=(new_stock == 0),
-        )
-    )
 
     await db.flush()
     await db.refresh(purchase)

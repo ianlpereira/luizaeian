@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -82,35 +82,20 @@ async def create_payment(
     """
     Cria um pagamento no Mercado Pago e persiste o registro em `payments`.
     NÃO marca o presente como comprado — isso só ocorre no webhook.
+    Presentes podem ser comprados quantas vezes forem necessárias, inclusive
+    concorrentemente, sem limite.
     """
-    # 1. Valida que o presente existe e tem estoque
+    # 1. Valida que o presente existe
     gift = await db.get(Gift, payload.gift_id)
     if gift is None:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Presente não encontrado.")
-    if gift.purchased or gift.stock_limit <= 0:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=409, detail="Presente já esgotado.")
 
-    # 2. Verifica se já existe pagamento pendente/aprovado para este presente
-    existing = await db.scalar(
-        select(Payment).where(
-            Payment.gift_id == payload.gift_id,
-            Payment.status.in_(["pending", "approved", "in_process"]),
-        )
-    )
-    if existing is not None:
-        from fastapi import HTTPException
-        raise HTTPException(
-            status_code=409,
-            detail="Já existe um pagamento em andamento para este presente.",
-        )
-
-    # 3. Sanitiza inputs
+    # 2. Sanitiza inputs
     safe_name = _sanitize(payload.buyer_name) or ""
     safe_message = _sanitize(payload.message)
 
-    # 4. Modo mock (dev sem credenciais TEST- do MP)
+    # 3. Modo mock (dev sem credenciais TEST- do MP)
     if settings.MP_MOCK:
         if payload.method == "pix":
             return await _mock_pix_payment(
@@ -464,7 +449,7 @@ async def process_webhook(mp_payment_id: int, db: AsyncSession) -> None:
     # Só processa a compra do presente se ainda não foi processado
     if internal_status == PaymentStatus.APPROVED and old_status != PaymentStatus.APPROVED:
         gift = await db.get(Gift, payment.gift_id)
-        if gift and not gift.purchased and gift.stock_limit > 0:
+        if gift:
             await _fulfill_gift(gift, payment.buyer_name, payment.message, db)
             logger.info(
                 "Webhook: presente %s marcado como comprado via pagamento %s",
@@ -485,8 +470,10 @@ async def get_payment_status(payment_id: uuid.UUID, db: AsyncSession) -> Payment
     mp_payment_id, consulta o MP diretamente para pegar atualizações que o
     webhook pode ter perdido ou atrasado.
 
-    Reconciliação automática: se o pagamento está aprovado mas o presente
-    ainda não foi fulfillado (gift_purchases ausente), executa _fulfill_gift.
+    Reconciliação automática: se o pagamento está aprovado mas ainda não gerou
+    um gift_purchases correspondente, executa _fulfill_gift. A checagem é
+    escopada ao buyer_name + message deste pagamento (e não apenas ao gift_id),
+    já que um mesmo presente agora pode ter múltiplas compras.
     """
     payment = await db.get(Payment, payment_id)
     if payment is None:
@@ -513,14 +500,18 @@ async def get_payment_status(payment_id: uuid.UUID, db: AsyncSession) -> Payment
         except Exception as exc:
             logger.warning("Polling: falha ao consultar MP para payment %s: %s", payment_id, exc)
 
-    # Reconciliação: approved sem gift_purchase → fulfilla agora
+    # Reconciliação: approved sem gift_purchase correspondente → fulfilla agora
     if payment.status == PaymentStatus.APPROVED:
         existing_purchase = await db.scalar(
-            select(GiftPurchase).where(GiftPurchase.gift_id == payment.gift_id)
+            select(GiftPurchase).where(
+                GiftPurchase.gift_id == payment.gift_id,
+                GiftPurchase.buyer_name == payment.buyer_name,
+                GiftPurchase.message == payment.message,
+            )
         )
         if existing_purchase is None:
             gift = await db.get(Gift, payment.gift_id)
-            if gift and not gift.purchased and gift.stock_limit > 0:
+            if gift:
                 await _fulfill_gift(gift, payment.buyer_name, payment.message, db)
                 logger.info(
                     "Reconciliação: presente %s fulfillado via polling (payment %s)",
@@ -544,7 +535,8 @@ async def _fulfill_gift(
     db: AsyncSession,
 ) -> None:
     """
-    Cria o registro em gift_purchases e decrementa o estoque do presente.
+    Cria o registro em gift_purchases. Presentes não têm limite de compra,
+    então este registro não afeta a disponibilidade do presente.
     Chamado tanto pelo webhook (Pix) quanto pela resposta direta (Cartão aprovado).
     """
     purchase = GiftPurchase(
@@ -553,13 +545,3 @@ async def _fulfill_gift(
         message=message,
     )
     db.add(purchase)
-
-    new_stock = max(gift.stock_limit - 1, 0)
-    await db.execute(
-        update(Gift)
-        .where(Gift.id == gift.id)
-        .values(
-            stock_limit=new_stock,
-            purchased=(new_stock == 0),
-        )
-    )
