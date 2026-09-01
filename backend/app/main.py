@@ -7,6 +7,7 @@ from app.routers import gifts
 from app.routers import rsvp
 from app.routers import messages
 from app.routers import payments
+from app.routers import admin
 
 import logging
 logger = logging.getLogger("uvicorn.error")
@@ -37,3 +38,4 @@ app.include_router(gifts.router, prefix="/api/gifts", tags=["gifts"])
 app.include_router(rsvp.router, prefix="/api/rsvp", tags=["rsvp"])
 app.include_router(messages.router, prefix="/api/messages", tags=["messages"])
 app.include_router(payments.router, prefix="/api/payments", tags=["payments"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])

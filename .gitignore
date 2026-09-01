@@ -29,3 +29,6 @@ frontend/.env.local
 
 # Docker
 *.override.yml
+
+# Secrets
+.localfiles/
