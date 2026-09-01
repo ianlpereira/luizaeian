@@ -175,15 +175,24 @@ export const PhysicalLink = styled.a`
   }
 `
 
-export const PhysicalInstructionsLink = styled.button`
-  display: inline;
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  color: ${({ theme }) => theme.colors.primary};
-  text-decoration: underline;
+export const OnlineListButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
+  border-radius: ${({ theme }) => theme.borderRadius.pill};
+  border: 1.5px solid ${({ theme }) => theme.colors.primary};
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.text.inverse};
+  font-family: ${({ theme }) => theme.typography.fontFamily.sans};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
   cursor: pointer;
+  transition: transform 150ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
 `
 
 // ── Category filter ───────────────────────────────────────────────────────────

@@ -12,16 +12,15 @@ export function PhysicalStoreInfo() {
       <S.PhysicalIcon>🏬</S.PhysicalIcon>
       <S.PhysicalTitle>Presentear na {physicalStore.storeName}</S.PhysicalTitle>
       <S.PhysicalAddress>{physicalStore.address}</S.PhysicalAddress>
-      <S.PhysicalInstructions>
-        {physicalStore.instructions} Você também pode nos presentear através da{' '}
-        <S.PhysicalInstructionsLink
-          type="button"
-          onClick={() => window.open(physicalStore.onlineListUrl, '_blank', 'noopener,noreferrer')}
-        >
-          lista online
-        </S.PhysicalInstructionsLink>
-        .
-      </S.PhysicalInstructions>
+
+      <S.OnlineListButton
+        type="button"
+        onClick={() => window.open(physicalStore.onlineListUrl, '_blank', 'noopener,noreferrer')}
+      >
+        🛍️ Ver lista online
+      </S.OnlineListButton>
+
+      <S.PhysicalInstructions>{physicalStore.instructions}</S.PhysicalInstructions>
 
       <S.PhysicalLinks>
         <S.PhysicalLink href={physicalStoreMapsUrl} target="_blank" rel="noopener noreferrer">
