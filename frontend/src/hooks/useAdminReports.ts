@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { getAdminGifts, getAdminPayments, getAdminRsvps } from '@/lib/adminApi'
+import { getAdminGifts, getAdminGuests, getAdminPayments, getAdminRsvps } from '@/lib/adminApi'
 import { useAdminAuthStore } from '@/store/adminAuth'
 
 /**
@@ -17,6 +17,17 @@ const commonOptions = {
   staleTime: 30_000,
   retry: false,
 } as const
+
+export function useAdminGuests() {
+  const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated)
+
+  return useQuery({
+    queryKey: ['admin', 'guests'],
+    queryFn: getAdminGuests,
+    enabled: isAuthenticated,
+    ...commonOptions,
+  })
+}
 
 export function useAdminRsvps() {
   const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated)
@@ -51,7 +62,7 @@ export function useAdminPayments() {
   })
 }
 
-/** Botão "Atualizar": refaz os três relatórios de uma vez. */
+/** Botão "Atualizar": refaz os quatro relatórios de uma vez. */
 export function useRefreshAdminReports() {
   const queryClient = useQueryClient()
 

@@ -1,9 +1,9 @@
 """
 Rotas da área administrativa (/api/admin).
 
-Login com usuário único vindo do ambiente e relatórios somente leitura de RSVP,
-presentes e pagamentos. Todas as rotas de relatório exigem o JWT emitido em
-POST /login, enviado no header `Authorization: Bearer <token>`.
+Login com usuário único vindo do ambiente e relatórios somente leitura da lista
+de convidados, RSVP, presentes e pagamentos. Todas as rotas de relatório exigem
+o JWT emitido em POST /login, enviado no header `Authorization: Bearer <token>`.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -21,6 +21,7 @@ from app.core.security import (
 )
 from app.schemas.admin import (
     AdminGiftsOut,
+    AdminGuestsOut,
     AdminLoginIn,
     AdminMeOut,
     AdminPaymentsOut,
@@ -67,6 +68,15 @@ async def login(
 async def me(username: str = Depends(get_current_admin)) -> AdminMeOut:
     """Verificação barata de token — usada pelo frontend ao abrir a página."""
     return AdminMeOut(username=username)
+
+
+@router.get("/guests", response_model=AdminGuestsOut)
+async def guests_report(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGuestsOut:
+    """Lista de convidados importada da planilha dos noivos."""
+    return await admin_report_service.get_guests_report(db)
 
 
 @router.get("/rsvps", response_model=AdminRsvpsOut)

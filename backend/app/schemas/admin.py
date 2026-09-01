@@ -119,3 +119,52 @@ class AdminPaymentRow(BaseModel):
 class AdminPaymentsOut(BaseModel):
     summary: PaymentSummary
     items: list[AdminPaymentRow]
+
+
+# ── Lista de convidados ───────────────────────────────────────────────────────
+#
+# Origem diferente dos relatórios acima: não vem do site, e sim da planilha dos
+# noivos, importada por scripts/import_guests.py. Os rótulos em pt-BR ficam no
+# frontend; aqui os valores são os mesmos gravados no banco.
+
+InviteType = Literal["physical", "digital"]
+GuestSide = Literal["bride", "groom"]
+AgeGroup = Literal["adult", "child"]
+Attendance = Literal["uncertain", "declined"]
+SentStatus = Literal["sent", "pending"]
+
+
+class GuestSummary(BaseModel):
+    total: int
+    # Famílias/casais: cada grupo recebeu um convite.
+    total_groups: int
+    physical_invites: int
+    digital_invites: int
+    bride_side: int
+    groom_side: int
+    invites_sent: int
+    invites_pending: int
+    # Anotações dos noivos — quem ainda não respondeu não entra em nenhum dos dois.
+    declined: int
+    uncertain: int
+
+
+class AdminGuestRow(BaseModel):
+    id: uuid.UUID
+    sort_order: int
+    full_name: str
+    group_index: int
+    group_label: str
+    group_size: int
+    is_group_head: bool
+    invite_type: InviteType
+    side: GuestSide
+    age_group: AgeGroup
+    attendance: Attendance | None
+    save_the_date_status: SentStatus | None
+    invite_sent_status: SentStatus
+
+
+class AdminGuestsOut(BaseModel):
+    summary: GuestSummary
+    items: list[AdminGuestRow]

@@ -22,16 +22,20 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.gift import Gift, GiftPurchase
+from app.models.guest import Guest
 from app.models.payment import Payment
 from app.models.rsvp import Rsvp
 from app.schemas.admin import (
     AdminGiftRow,
     AdminGiftsOut,
+    AdminGuestRow,
+    AdminGuestsOut,
     AdminPaymentRow,
     AdminPaymentsOut,
     AdminRsvpRow,
     AdminRsvpsOut,
     GiftSummary,
+    GuestSummary,
     PaymentSummary,
     RsvpSummary,
 )
@@ -90,6 +94,58 @@ async def get_rsvp_report(db: AsyncSession) -> AdminRsvpsOut:
         companions_count=companions_count,
     )
     return AdminRsvpsOut(summary=summary, items=items)
+
+
+# ── Convidados ────────────────────────────────────────────────────────────────
+
+async def get_guests_report(db: AsyncSession) -> AdminGuestsOut:
+    """
+    Lista de convidados na ordem da planilha, que já mantém cada família junta.
+
+    Os totais são contados no mesmo laço em vez de por agregação no banco: são
+    ~300 linhas que já foram trazidas para montar `items`, e uma segunda ida ao
+    banco só para somá-las não se paga.
+    """
+    result = await db.execute(select(Guest).order_by(Guest.sort_order.asc()))
+    guests = list(result.scalars().all())
+
+    items: list[AdminGuestRow] = []
+    summary = GuestSummary(
+        total=len(guests),
+        total_groups=0,
+        physical_invites=0,
+        digital_invites=0,
+        bride_side=0,
+        groom_side=0,
+        invites_sent=0,
+        invites_pending=0,
+        declined=0,
+        uncertain=0,
+    )
+
+    for guest in guests:
+        if guest.is_group_head:
+            summary.total_groups += 1
+        if guest.invite_type == "physical":
+            summary.physical_invites += 1
+        else:
+            summary.digital_invites += 1
+        if guest.side == "bride":
+            summary.bride_side += 1
+        else:
+            summary.groom_side += 1
+        if guest.invite_sent_status == "sent":
+            summary.invites_sent += 1
+        else:
+            summary.invites_pending += 1
+        if guest.attendance == "declined":
+            summary.declined += 1
+        elif guest.attendance == "uncertain":
+            summary.uncertain += 1
+
+        items.append(AdminGuestRow.model_validate(guest, from_attributes=True))
+
+    return AdminGuestsOut(summary=summary, items=items)
 
 
 # ── Presentes ─────────────────────────────────────────────────────────────────

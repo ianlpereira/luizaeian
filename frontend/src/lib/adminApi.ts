@@ -12,6 +12,7 @@
 import { ApiError, api } from '@/lib/api'
 import type {
   AdminGiftsReport,
+  AdminGuestsReport,
   AdminMe,
   AdminPaymentsReport,
   AdminRsvpsReport,
@@ -83,6 +84,8 @@ export const adminLogin = (username: string, password: string) =>
   api.post<AdminToken>('/api/admin/login', { username, password })
 
 export const getAdminMe = () => adminApi.get<AdminMe>('/api/admin/me')
+
+export const getAdminGuests = () => adminApi.get<AdminGuestsReport>('/api/admin/guests')
 
 export const getAdminRsvps = () => adminApi.get<AdminRsvpsReport>('/api/admin/rsvps')
 

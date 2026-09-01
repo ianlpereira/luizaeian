@@ -97,3 +97,48 @@ export interface AdminPaymentsReport {
   summary: PaymentSummary
   items: AdminPaymentRow[]
 }
+
+// ── Lista de convidados ───────────────────────────────────────────────────────
+
+export type InviteType = 'physical' | 'digital'
+export type GuestSide = 'bride' | 'groom'
+export type AgeGroup = 'adult' | 'child'
+export type Attendance = 'uncertain' | 'declined'
+export type SentStatus = 'sent' | 'pending'
+
+export interface GuestSummary {
+  total: number
+  /** Famílias/casais: cada grupo recebeu um convite */
+  total_groups: number
+  physical_invites: number
+  digital_invites: number
+  bride_side: number
+  groom_side: number
+  invites_sent: number
+  invites_pending: number
+  /** Quem ainda não respondeu não entra em declined nem em uncertain */
+  declined: number
+  uncertain: number
+}
+
+export interface AdminGuestRow {
+  id: string
+  sort_order: number
+  full_name: string
+  group_index: number
+  /** Nome do titular do convite, usado como rótulo do grupo */
+  group_label: string
+  group_size: number
+  is_group_head: boolean
+  invite_type: InviteType
+  side: GuestSide
+  age_group: AgeGroup
+  attendance: Attendance | null
+  save_the_date_status: SentStatus | null
+  invite_sent_status: SentStatus
+}
+
+export interface AdminGuestsReport {
+  summary: GuestSummary
+  items: AdminGuestRow[]
+}

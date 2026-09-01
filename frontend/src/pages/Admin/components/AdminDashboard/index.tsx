@@ -4,11 +4,13 @@ import { Alert, Button, Tabs } from 'antd'
 import { useAdminLogout } from '@/hooks/useAdminAuth'
 import {
   useAdminGifts,
+  useAdminGuests,
   useAdminPayments,
   useAdminRsvps,
   useRefreshAdminReports,
 } from '@/hooks/useAdminReports'
 import { GiftsTable } from '../GiftsTable'
+import { GuestsTable } from '../GuestsTable'
 import { PaymentsTable } from '../PaymentsTable'
 import { RsvpTable } from '../RsvpTable'
 import { SummaryCards } from '../SummaryCards'
@@ -18,6 +20,7 @@ import * as S from './styles'
 const COLD_START_HINT_MS = 4000
 
 export function AdminDashboard() {
+  const guests = useAdminGuests()
   const rsvps = useAdminRsvps()
   const gifts = useAdminGifts()
   const payments = useAdminPayments()
@@ -25,7 +28,7 @@ export function AdminDashboard() {
   const refresh = useRefreshAdminReports()
   const logout = useAdminLogout()
 
-  const isLoading = rsvps.isLoading || gifts.isLoading || payments.isLoading
+  const isLoading = guests.isLoading || rsvps.isLoading || gifts.isLoading || payments.isLoading
   const [showColdStartHint, setShowColdStartHint] = useState(false)
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export function AdminDashboard() {
     return () => window.clearTimeout(timer)
   }, [isLoading])
 
-  const error = rsvps.error ?? gifts.error ?? payments.error
+  const error = guests.error ?? rsvps.error ?? gifts.error ?? payments.error
 
   return (
     <S.Page>
@@ -78,8 +81,19 @@ export function AdminDashboard() {
       />
 
       <Tabs
-        defaultActiveKey="rsvps"
+        defaultActiveKey="guests"
         items={[
+          {
+            key: 'guests',
+            label: 'Convidados',
+            children: (
+              <GuestsTable
+                rows={guests.data?.items ?? []}
+                summary={guests.data?.summary}
+                loading={guests.isLoading}
+              />
+            ),
+          },
           {
             key: 'rsvps',
             label: 'Confirmações',

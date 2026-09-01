@@ -13,6 +13,7 @@ from app.models import gift     # noqa: F401
 from app.models import rsvp     # noqa: F401
 from app.models import message  # noqa: F401
 from app.models import payment  # noqa: F401
+from app.models import guest    # noqa: F401
 
 # this is the Alembic Config object
 config = context.config
