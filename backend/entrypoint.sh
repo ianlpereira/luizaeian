@@ -30,4 +30,10 @@ echo "==> Running database migrations..."
 alembic upgrade head
 
 echo "==> Starting FastAPI application..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+# --proxy-headers: sem isso, request.client.host e o IP do proxy do Render,
+# igual para todos os visitantes. O limite por IP do login vira um limite
+# global e qualquer um consegue trancar a area administrativa.
+# --forwarded-allow-ips='*': so o proxy do Render fala com este processo, entao
+# confiar nele e seguro; a porta 8000 nao fica exposta fora da rede interna.
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000 \
+  --proxy-headers --forwarded-allow-ips='*'

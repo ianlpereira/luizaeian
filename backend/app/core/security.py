@@ -144,15 +144,36 @@ async def get_current_admin(
 _attempts: dict[str, list[float]] = {}
 _global_attempts: list[float] = []
 
-# Teto global, para o caso de um atacante alternar de IP a cada tentativa.
-_GLOBAL_MAX_ATTEMPTS = 30
 
+def _client_ip(request: Request) -> tuple[str, str]:
+    """
+    Resolve o IP real do visitante e diz de onde ele veio.
 
-def _client_ip(request: Request) -> str:
+    A ordem importa. O site está atrás do Cloudflare, que por sua vez fala com o
+    Render: `request.client.host` é sempre o IP do proxy, igual para todo mundo.
+    Usá-lo como chave transforma o limite por IP num limite global — foi o que
+    aconteceu em produção, com um visitante qualquer conseguindo trancar o login
+    do casal por 15 minutos.
+
+    `CF-Connecting-IP` é preenchido pelo Cloudflare com o IP do cliente e não
+    pode ser forjado por quem passa por ele. Só caímos no X-Forwarded-For e no
+    peer da conexão quando esse header não existe.
+    """
+    cf_ip = request.headers.get("cf-connecting-ip")
+    if cf_ip:
+        return cf_ip.strip(), "cf-connecting-ip"
+
+    true_client = request.headers.get("true-client-ip")
+    if true_client:
+        return true_client.strip(), "true-client-ip"
+
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+        return forwarded.split(",")[0].strip(), "x-forwarded-for"
+
+    # Sem nenhum header de proxy, isto é o IP do próprio proxy: chave compartilhada.
+    # Marcamos a origem para que o log denuncie a situação em vez de escondê-la.
+    return (request.client.host if request.client else "unknown"), "peer"
 
 
 def _prune(timestamps: list[float], cutoff: float) -> list[float]:
@@ -163,7 +184,7 @@ def check_login_rate_limit(request: Request) -> None:
     """Bloqueia com 429 quando o IP (ou o servidor todo) excede a janela."""
     now = time.monotonic()
     cutoff = now - settings.ADMIN_LOGIN_WINDOW_MINUTES * 60
-    ip = _client_ip(request)
+    ip, _source = _client_ip(request)
 
     global _global_attempts
     _global_attempts = _prune(_global_attempts, cutoff)
@@ -177,7 +198,7 @@ def check_login_rate_limit(request: Request) -> None:
             del _attempts[key]
 
     ip_blocked = len(_attempts.get(ip, [])) >= settings.ADMIN_LOGIN_MAX_ATTEMPTS
-    global_blocked = len(_global_attempts) >= _GLOBAL_MAX_ATTEMPTS
+    global_blocked = len(_global_attempts) >= settings.ADMIN_LOGIN_GLOBAL_MAX_ATTEMPTS
 
     if ip_blocked or global_blocked:
         raise HTTPException(
@@ -190,14 +211,23 @@ def check_login_rate_limit(request: Request) -> None:
 def register_failed_login(request: Request) -> None:
     """Contabiliza uma tentativa malsucedida e registra apenas o IP no log."""
     now = time.monotonic()
-    ip = _client_ip(request)
+    ip, source = _client_ip(request)
 
     _attempts.setdefault(ip, []).append(now)
     _global_attempts.append(now)
 
-    logger.warning("Login administrativo falhou (ip=%s)", ip)
+    # `source=peer` no log significa que nenhum header de proxy chegou e que
+    # todos os visitantes estão dividindo o mesmo balde — sinal de configuração
+    # errada, não de ataque.
+    logger.warning(
+        "Login administrativo falhou (ip=%s, source=%s, tentativas=%d)",
+        ip,
+        source,
+        len(_attempts[ip]),
+    )
 
 
 def clear_login_attempts(request: Request) -> None:
     """Zera a janela do IP após um login bem-sucedido."""
-    _attempts.pop(_client_ip(request), None)
+    ip, _source = _client_ip(request)
+    _attempts.pop(ip, None)

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Proteção contra força bruta no endpoint de login (janela deslizante em memória)
     ADMIN_LOGIN_MAX_ATTEMPTS: int = 5
     ADMIN_LOGIN_WINDOW_MINUTES: int = 15
+    # Teto somando todos os IPs, para o caso de um atacante trocar de origem a
+    # cada tentativa. Precisa ficar bem acima do limite por IP: se ficar perto,
+    # um único visitante insistente tranca o login de todo mundo.
+    ADMIN_LOGIN_GLOBAL_MAX_ATTEMPTS: int = 100
 
     # CORS — str para evitar conflito de parse com env vars legadas no Render
     CORS_ORIGINS: str = (
