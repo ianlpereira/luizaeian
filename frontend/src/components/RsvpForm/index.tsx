@@ -62,7 +62,7 @@ export function RsvpForm() {
       <S.Inner>
         <S.SectionTitle>Confirme sua Presença</S.SectionTitle>
         <S.SectionSubtitle>
-          Confirme até <strong>1º de julho de 2026</strong>
+          Confirme até <strong>1º de outubro de 2026</strong>
         </S.SectionSubtitle>
 
         <S.Form onSubmit={handleSubmit(onSubmit)} noValidate>

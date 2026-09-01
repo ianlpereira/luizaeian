@@ -175,9 +175,15 @@ export const PhysicalLink = styled.a`
   }
 `
 
-export const PhysicalInstructionsLink = styled.a`
+export const PhysicalInstructionsLink = styled.button`
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
   color: ${({ theme }) => theme.colors.primary};
   text-decoration: underline;
+  cursor: pointer;
 `
 
 // ── Category filter ───────────────────────────────────────────────────────────

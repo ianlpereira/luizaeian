@@ -15,9 +15,8 @@ export function PhysicalStoreInfo() {
       <S.PhysicalInstructions>
         {physicalStore.instructions} Você também pode nos presentear através da{' '}
         <S.PhysicalInstructionsLink
-          href={physicalStore.onlineListUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+          type="button"
+          onClick={() => window.open(physicalStore.onlineListUrl, '_blank', 'noopener,noreferrer')}
         >
           lista online
         </S.PhysicalInstructionsLink>
