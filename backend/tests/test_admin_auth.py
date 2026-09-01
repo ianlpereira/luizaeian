@@ -133,6 +133,86 @@ async def test_excesso_de_tentativas_retorna_429(client: AsyncClient, admin_env:
     assert bloqueado.headers["retry-after"] == str(settings.ADMIN_LOGIN_WINDOW_MINUTES * 60)
 
 
+async def test_bloqueio_de_um_ip_nao_afeta_outro(client: AsyncClient, admin_env: None) -> None:
+    """
+    Regressão do incidente em produção: `request.client.host` atrás do Render é
+    sempre o IP do proxy, então todos os visitantes caíam no mesmo balde e um
+    único insistente trancava o login do casal.
+    """
+    payload = {"username": TEST_USERNAME, "password": "senha-errada"}
+    atacante = {"CF-Connecting-IP": "203.0.113.10"}
+    casal = {"CF-Connecting-IP": "198.51.100.20"}
+
+    for _ in range(settings.ADMIN_LOGIN_MAX_ATTEMPTS):
+        await client.post("/api/admin/login", json=payload, headers=atacante)
+
+    bloqueado = await client.post("/api/admin/login", json=payload, headers=atacante)
+    assert bloqueado.status_code == 429
+
+    # O outro IP continua livre — e consegue de fato entrar.
+    livre = await client.post(
+        "/api/admin/login",
+        json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+        headers=casal,
+    )
+    assert livre.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "header",
+    ["CF-Connecting-IP", "True-Client-IP", "X-Forwarded-For"],
+)
+async def test_headers_de_proxy_separam_os_baldes(
+    client: AsyncClient, admin_env: None, header: str
+) -> None:
+    payload = {"username": TEST_USERNAME, "password": "senha-errada"}
+
+    for _ in range(settings.ADMIN_LOGIN_MAX_ATTEMPTS):
+        await client.post("/api/admin/login", json=payload, headers={header: "203.0.113.30"})
+
+    mesmo_ip = await client.post(
+        "/api/admin/login", json=payload, headers={header: "203.0.113.30"}
+    )
+    outro_ip = await client.post(
+        "/api/admin/login", json=payload, headers={header: "203.0.113.31"}
+    )
+
+    assert mesmo_ip.status_code == 429
+    assert outro_ip.status_code == 401
+
+
+async def test_cf_connecting_ip_tem_prioridade_sobre_forwarded_for(
+    client: AsyncClient, admin_env: None
+) -> None:
+    """
+    O X-Forwarded-For pode ser forjado por quem chama; o CF-Connecting-IP é
+    escrito pelo Cloudflare. Bloquear pelo primeiro permitiria trocar de balde
+    a cada tentativa.
+    """
+    payload = {"username": TEST_USERNAME, "password": "senha-errada"}
+
+    for i in range(settings.ADMIN_LOGIN_MAX_ATTEMPTS):
+        await client.post(
+            "/api/admin/login",
+            json=payload,
+            headers={"CF-Connecting-IP": "203.0.113.40", "X-Forwarded-For": f"10.0.0.{i}"},
+        )
+
+    # XFF diferente de todos os anteriores, mas o CF-Connecting-IP é o mesmo.
+    resposta = await client.post(
+        "/api/admin/login",
+        json=payload,
+        headers={"CF-Connecting-IP": "203.0.113.40", "X-Forwarded-For": "10.0.0.99"},
+    )
+
+    assert resposta.status_code == 429
+
+
+async def test_teto_global_fica_acima_do_limite_por_ip() -> None:
+    """Se o teto global ficar perto do limite por IP, ele vira o gargalo real."""
+    assert settings.ADMIN_LOGIN_GLOBAL_MAX_ATTEMPTS > settings.ADMIN_LOGIN_MAX_ATTEMPTS * 5
+
+
 async def test_login_bem_sucedido_limpa_a_janela(client: AsyncClient, admin_env: None) -> None:
     for _ in range(settings.ADMIN_LOGIN_MAX_ATTEMPTS - 1):
         await client.post(
