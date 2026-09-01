@@ -6,6 +6,7 @@ export interface PhysicalStoreInfo {
   lat: number
   lng: number
   instructions: string
+  onlineListUrl: string
 }
 
 const lat = -2.5283292
@@ -19,6 +20,7 @@ export const physicalStore: PhysicalStoreInfo = {
   instructions:
     'Você também pode nos presentear pessoalmente em qualquer loja Camicado. ' +
     'Basta escolher o presente na loja física e informar aos vendedores que é para o casamento de Luiza e Ian.',
+  onlineListUrl: 'https://lista.camicado.com.br/luizaeian',
 }
 
 export const physicalStoreMapsUrl = getGoogleMapsUrl(lat, lng)

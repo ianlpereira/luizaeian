@@ -154,7 +154,7 @@ export function GiftList() {
             aria-selected={channel === 'physical'}
             onClick={() => setChannel('physical')}
           >
-            🏬 Loja física
+            🏬 Camicado
           </S.ChannelTab>
         </S.ChannelTabs>
 

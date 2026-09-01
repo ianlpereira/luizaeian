@@ -12,7 +12,17 @@ export function PhysicalStoreInfo() {
       <S.PhysicalIcon>🏬</S.PhysicalIcon>
       <S.PhysicalTitle>Presentear na {physicalStore.storeName}</S.PhysicalTitle>
       <S.PhysicalAddress>{physicalStore.address}</S.PhysicalAddress>
-      <S.PhysicalInstructions>{physicalStore.instructions}</S.PhysicalInstructions>
+      <S.PhysicalInstructions>
+        {physicalStore.instructions} Você também pode nos presentear através da{' '}
+        <S.PhysicalInstructionsLink
+          href={physicalStore.onlineListUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          lista online
+        </S.PhysicalInstructionsLink>
+        .
+      </S.PhysicalInstructions>
 
       <S.PhysicalLinks>
         <S.PhysicalLink href={physicalStoreMapsUrl} target="_blank" rel="noopener noreferrer">

@@ -175,6 +175,11 @@ export const PhysicalLink = styled.a`
   }
 `
 
+export const PhysicalInstructionsLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: underline;
+`
+
 // ── Category filter ───────────────────────────────────────────────────────────
 
 export const CategoryRow = styled.div`
