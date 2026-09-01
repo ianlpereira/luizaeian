@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 import json
@@ -32,6 +33,20 @@ class Settings(BaseSettings):
     # cada tentativa. Precisa ficar bem acima do limite por IP: se ficar perto,
     # um único visitante insistente tranca o login de todo mundo.
     ADMIN_LOGIN_GLOBAL_MAX_ATTEMPTS: int = 100
+
+    @field_validator("ADMIN_USERNAME", "ADMIN_PASSWORD_HASH", mode="after")
+    @classmethod
+    def _strip_admin_credential(cls, value: str) -> str:
+        """
+        Remove espaços e quebras de linha das pontas.
+
+        Os campos de valor do painel do Render são textareas: um Enter sem
+        querer, ou um copiar-e-colar que trouxe junto a quebra de linha, guarda
+        `"$2b$12$...\\n"`. O passlib recusa esse hash e todo login vira 401,
+        enquanto a tela continua mostrando um hash aparentemente perfeito.
+        O mesmo vale para o usuário, comparado byte a byte com compare_digest.
+        """
+        return value.strip()
 
     # CORS — str para evitar conflito de parse com env vars legadas no Render
     CORS_ORIGINS: str = (
