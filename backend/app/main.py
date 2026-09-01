@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.security import log_admin_config_status
 from app.routers import health
 from app.routers import gifts
 from app.routers import rsvp
@@ -22,6 +23,9 @@ app = FastAPI(
 
 # Log das origens CORS permitidas (visível nos logs do Render)
 logger.info("CORS allowed origins: %s", settings.cors_origins_list)
+
+# Denuncia na subida se a área administrativa estiver mal configurada
+log_admin_config_status()
 
 # CORS Middleware
 app.add_middleware(

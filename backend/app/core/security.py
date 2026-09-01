@@ -47,6 +47,33 @@ def admin_auth_configured() -> bool:
     return bool(settings.ADMIN_USERNAME and settings.ADMIN_PASSWORD_HASH)
 
 
+def log_admin_config_status() -> None:
+    """
+    Diz no boot em que estado a área administrativa está.
+
+    Um hash malformado só aparecia na primeira tentativa de login, misturado a
+    um 401 genérico — o mesmo 401 de senha errada. Levantar isso na subida
+    transforma uma caça ao erro numa linha de log.
+    """
+    if not settings.ADMIN_USERNAME or not settings.ADMIN_PASSWORD_HASH:
+        logger.warning(
+            "Área administrativa desativada: defina ADMIN_USERNAME e ADMIN_PASSWORD_HASH."
+        )
+        return
+
+    if not pwd_context.identify(settings.ADMIN_PASSWORD_HASH):
+        logger.error(
+            "ADMIN_PASSWORD_HASH não é um hash bcrypt (%d caracteres). "
+            "Todo login vai falhar com 401. Gere o valor com "
+            "`python -m scripts.hash_admin_password` — o campo guarda o hash, "
+            "nunca a senha.",
+            len(settings.ADMIN_PASSWORD_HASH),
+        )
+        return
+
+    logger.info("Área administrativa habilitada para o usuário %r.", settings.ADMIN_USERNAME)
+
+
 def _password_fingerprint() -> str:
     """
     Impressão digital do hash da senha atual, embutida no token como claim `pwv`.

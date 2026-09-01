@@ -231,6 +231,59 @@ async def test_login_bem_sucedido_limpa_a_janela(client: AsyncClient, admin_env:
     assert de_novo.status_code == 401
 
 
+@pytest.mark.parametrize(
+    "sujeira",
+    ["{}\n", "{}\r\n", " {} ", "\n{}", "{}\t"],
+    ids=["nova-linha", "crlf", "espacos", "quebra-antes", "tab"],
+)
+async def test_hash_com_espacos_ao_redor_ainda_autentica(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch, sujeira: str
+) -> None:
+    """
+    Incidente real: o campo de valor no painel do Render é um textarea, e o hash
+    ficou guardado com uma quebra de linha no fim. O passlib recusava o hash e
+    todo login virava 401, com a tela mostrando um hash aparentemente perfeito.
+    """
+    monkeypatch.setattr(settings, "ADMIN_USERNAME", TEST_USERNAME)
+    monkeypatch.setattr(
+        settings, "ADMIN_PASSWORD_HASH", sujeira.format(TEST_PASSWORD_HASH).strip()
+    )
+
+    response = await client.post(
+        "/api/admin/login",
+        json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+    )
+
+    assert response.status_code == 200
+
+
+def test_settings_limpa_espacos_das_credenciais() -> None:
+    """A limpeza acontece no Settings, então vale para qualquer origem do valor."""
+    from app.core.config import Settings
+
+    configurado = Settings(
+        ADMIN_USERNAME=f"  {TEST_USERNAME}\n",
+        ADMIN_PASSWORD_HASH=f"{TEST_PASSWORD_HASH}\n",
+    )
+
+    assert configurado.ADMIN_USERNAME == TEST_USERNAME
+    assert configurado.ADMIN_PASSWORD_HASH == TEST_PASSWORD_HASH
+
+
+async def test_usuario_com_espacos_ao_redor_ainda_autentica(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "ADMIN_USERNAME", f" {TEST_USERNAME} ".strip())
+    monkeypatch.setattr(settings, "ADMIN_PASSWORD_HASH", TEST_PASSWORD_HASH)
+
+    response = await client.post(
+        "/api/admin/login",
+        json={"username": TEST_USERNAME, "password": TEST_PASSWORD},
+    )
+
+    assert response.status_code == 200
+
+
 async def test_hash_malformado_nao_derruba_o_login(
     client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
