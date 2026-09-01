@@ -103,8 +103,9 @@ export interface AdminPaymentsReport {
 export type InviteType = 'physical' | 'digital'
 export type GuestSide = 'bride' | 'groom'
 export type AgeGroup = 'adult' | 'child'
-export type Attendance = 'uncertain' | 'declined'
+export type Attendance = 'confirmed' | 'uncertain' | 'declined'
 export type SentStatus = 'sent' | 'pending'
+export type RsvpRole = 'primary' | 'companion'
 
 export interface GuestSummary {
   total: number
@@ -116,9 +117,13 @@ export interface GuestSummary {
   groom_side: number
   invites_sent: number
   invites_pending: number
-  /** Quem ainda não respondeu não entra em declined nem em uncertain */
+  /** Quem ainda não respondeu não entra em nenhum dos três */
   declined: number
   uncertain: number
+  confirmed: number
+  linked_to_rsvp: number
+  /** Confirmações que nenhum convidado reivindica — gente fora da lista */
+  rsvps_without_guest: number
 }
 
 export interface AdminGuestRow {
@@ -126,7 +131,7 @@ export interface AdminGuestRow {
   sort_order: number
   full_name: string
   group_index: number
-  /** Nome do titular do convite, usado como rótulo do grupo */
+  /** Derivados na leitura a partir do grupo — não são colunas da tabela */
   group_label: string
   group_size: number
   is_group_head: boolean
@@ -136,9 +141,79 @@ export interface AdminGuestRow {
   attendance: Attendance | null
   save_the_date_status: SentStatus | null
   invite_sent_status: SentStatus
+  rsvp_id: string | null
+  rsvp_role: RsvpRole | null
+  rsvp_full_name: string | null
+  rsvp_email: string | null
+  rsvp_status: string | null
+  edited_at: string | null
 }
 
 export interface AdminGuestsReport {
   summary: GuestSummary
   items: AdminGuestRow[]
+}
+
+export interface AdminGuestCreate {
+  full_name: string
+  side: GuestSide
+  invite_type: InviteType
+  age_group?: AgeGroup
+  /** Grupo existente, ou null para abrir um grupo novo */
+  group_index: number | null
+  attendance?: Attendance | null
+  save_the_date_status?: SentStatus | null
+  invite_sent_status?: SentStatus
+}
+
+/** Atualização parcial: só as chaves presentes são alteradas. */
+export interface AdminGuestUpdate {
+  full_name?: string
+  side?: GuestSide
+  invite_type?: InviteType
+  age_group?: AgeGroup
+  attendance?: Attendance | null
+  save_the_date_status?: SentStatus | null
+  invite_sent_status?: SentStatus
+  rsvp_id?: string | null
+  rsvp_role?: RsvpRole | null
+}
+
+// ── Casamento entre lista e confirmações ──────────────────────────────────────
+
+export type MatchState = 'linked' | 'unique_match' | 'ambiguous' | 'no_match'
+
+export interface RsvpMatchCandidate {
+  guest_id: string
+  full_name: string
+  group_label: string
+  /** Já aponta para outro RSVP: confirmar aqui sobrescreve o vínculo atual */
+  linked_to_other_rsvp: boolean
+}
+
+/** Uma pessoa dentro de um RSVP: o titular ou um dos acompanhantes. */
+export interface AdminRsvpMatchEntry {
+  rsvp_id: string
+  rsvp_full_name: string
+  rsvp_email: string
+  rsvp_status: string
+  entry_name: string
+  entry_role: RsvpRole
+  state: MatchState
+  linked_guest_id: string | null
+  candidates: RsvpMatchCandidate[]
+}
+
+export interface RsvpMatchSummary {
+  rsvps_total: number
+  entries_total: number
+  linked: number
+  unique_match: number
+  ambiguous: number
+  no_match: number
+}
+
+export interface AdminRsvpMatchesReport {
+  summary: RsvpMatchSummary
+  items: AdminRsvpMatchEntry[]
 }

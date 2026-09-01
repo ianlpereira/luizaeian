@@ -80,9 +80,11 @@ def test_linhas_em_branco_entram_no_grupo_do_titular() -> None:
     )
 
     assert [row["group_index"] for row in rows] == [1, 1, 1, 2, 2]
-    assert [row["group_label"] for row in rows] == ["Sergio"] * 3 + ["Lorena"] * 2
-    assert [row["group_size"] for row in rows] == [3, 3, 3, 2, 2]
     assert [row["is_group_head"] for row in rows] == [True, False, False, True, False]
+    # O rótulo e o tamanho do grupo não são gravados: saem derivados na leitura,
+    # em get_guests_report. Ver test_admin_guest_writes.py.
+    assert "group_label" not in rows[0]
+    assert "group_size" not in rows[0]
 
 
 def test_primeira_linha_sem_marca_e_erro() -> None:

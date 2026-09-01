@@ -90,6 +90,12 @@ export const api = {
   get: <T>(path: string, init?: RequestInit) => request<T>(path, init),
   post: <T>(path: string, body: unknown, init?: RequestInit) =>
     request<T>(path, { ...init, method: 'POST', body: JSON.stringify(body) }),
+  patch: <T>(path: string, body: unknown, init?: RequestInit) =>
+    request<T>(path, { ...init, method: 'PATCH', body: JSON.stringify(body) }),
+  // `del` porque `delete` é palavra reservada. Respostas 204 já viram null no
+  // request(), então o T aqui costuma ser void.
+  del: <T>(path: string, init?: RequestInit) =>
+    request<T>(path, { ...init, method: 'DELETE' }),
 }
 
 export { ApiError }

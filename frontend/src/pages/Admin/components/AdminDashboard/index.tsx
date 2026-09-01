@@ -90,6 +90,8 @@ export function AdminDashboard() {
               <GuestsTable
                 rows={guests.data?.items ?? []}
                 summary={guests.data?.summary}
+                // O drawer precisa da lista de RSVPs para o select de vínculo.
+                rsvps={rsvps.data?.items ?? []}
                 loading={guests.isLoading}
               />
             ),

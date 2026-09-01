@@ -16,8 +16,10 @@ Três armadilhas do modelo de dados estão tratadas aqui:
    relacionado vem de join ou subquery explícita.
 """
 
+import uuid
 from decimal import Decimal
 
+from fastapi import HTTPException, status
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -98,21 +100,125 @@ async def get_rsvp_report(db: AsyncSession) -> AdminRsvpsOut:
 
 # ── Convidados ────────────────────────────────────────────────────────────────
 
+# Campos de AdminGuestRow que são cópia direta da coluna. O resto (rótulo e
+# tamanho do grupo, dados do RSVP) é derivado ou vem por join.
+_GUEST_COLUMN_FIELDS = (
+    "id",
+    "sort_order",
+    "full_name",
+    "group_index",
+    "is_group_head",
+    "invite_type",
+    "side",
+    "age_group",
+    "attendance",
+    "save_the_date_status",
+    "invite_sent_status",
+    "rsvp_id",
+    "rsvp_role",
+    "edited_at",
+)
+
+
+def _guest_row(
+    guest: Guest,
+    group_label: str,
+    group_size: int,
+    rsvp_full_name: str | None,
+    rsvp_email: str | None,
+    rsvp_status: str | None,
+) -> AdminGuestRow:
+    return AdminGuestRow(
+        **{field: getattr(guest, field) for field in _GUEST_COLUMN_FIELDS},
+        group_label=group_label,
+        group_size=group_size,
+        rsvp_full_name=rsvp_full_name,
+        rsvp_email=rsvp_email,
+        rsvp_status=rsvp_status,
+    )
+
+
+async def get_guest_row(db: AsyncSession, guest_id: uuid.UUID) -> AdminGuestRow:
+    """
+    Um convidado só, no mesmo formato da listagem.
+
+    É o que as rotas de escrita devolvem: o painel recebe a linha já com o grupo
+    e o RSVP resolvidos, sem precisar recarregar a lista inteira para exibir o
+    resultado do salvamento.
+    """
+    row = (
+        await db.execute(
+            select(Guest, Rsvp.full_name, Rsvp.email, Rsvp.status)
+            .join(Rsvp, Guest.rsvp_id == Rsvp.id, isouter=True)
+            .where(Guest.id == guest_id)
+        )
+    ).first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Convidado não encontrado."
+        )
+
+    guest, rsvp_full_name, rsvp_email, rsvp_status = row
+
+    group_size = await db.scalar(
+        select(func.count(Guest.id)).where(Guest.group_index == guest.group_index)
+    )
+    head_name = await db.scalar(
+        select(Guest.full_name).where(
+            Guest.group_index == guest.group_index, Guest.is_group_head.is_(True)
+        )
+    )
+
+    return _guest_row(
+        guest,
+        head_name or guest.full_name,
+        group_size or 1,
+        rsvp_full_name,
+        rsvp_email,
+        rsvp_status,
+    )
+
+
 async def get_guests_report(db: AsyncSession) -> AdminGuestsOut:
     """
-    Lista de convidados na ordem da planilha, que já mantém cada família junta.
+    Lista de convidados, cada família junta e na ordem original.
+
+    `group_label` e `group_size` não são colunas: são derivados aqui numa
+    primeira passada. Guardá-los no banco obrigaria a atualizar todos os irmãos
+    a cada renomeação ou remoção — ver o docstring de models/guest.py.
+
+    O RSVP vinculado vem por outer join explícito, e não por relacionamento:
+    acessar um `lazy="select"` dentro de uma request async levanta
+    MissingGreenlet, como já documentado no topo deste módulo.
 
     Os totais são contados no mesmo laço em vez de por agregação no banco: são
     ~300 linhas que já foram trazidas para montar `items`, e uma segunda ida ao
     banco só para somá-las não se paga.
     """
-    result = await db.execute(select(Guest).order_by(Guest.sort_order.asc()))
-    guests = list(result.scalars().all())
+    result = await db.execute(
+        select(Guest, Rsvp.full_name, Rsvp.email, Rsvp.status)
+        .join(Rsvp, Guest.rsvp_id == Rsvp.id, isouter=True)
+        .order_by(
+            Guest.group_index.asc(),
+            Guest.is_group_head.desc(),
+            Guest.sort_order.asc(),
+        )
+    )
+    rows = result.all()
+
+    # group_index -> (nome do titular, tamanho do grupo)
+    group_labels: dict[int, str] = {}
+    group_sizes: dict[int, int] = {}
+    for guest, *_ in rows:
+        group_sizes[guest.group_index] = group_sizes.get(guest.group_index, 0) + 1
+        if guest.is_group_head:
+            group_labels[guest.group_index] = guest.full_name
 
     items: list[AdminGuestRow] = []
     summary = GuestSummary(
-        total=len(guests),
-        total_groups=0,
+        total=len(rows),
+        total_groups=len(group_sizes),
         physical_invites=0,
         digital_invites=0,
         bride_side=0,
@@ -121,11 +227,13 @@ async def get_guests_report(db: AsyncSession) -> AdminGuestsOut:
         invites_pending=0,
         declined=0,
         uncertain=0,
+        confirmed=0,
+        linked_to_rsvp=0,
+        rsvps_without_guest=0,
     )
+    claimed_rsvps: set[uuid.UUID] = set()
 
-    for guest in guests:
-        if guest.is_group_head:
-            summary.total_groups += 1
+    for guest, rsvp_full_name, rsvp_email, rsvp_status in rows:
         if guest.invite_type == "physical":
             summary.physical_invites += 1
         else:
@@ -142,8 +250,27 @@ async def get_guests_report(db: AsyncSession) -> AdminGuestsOut:
             summary.declined += 1
         elif guest.attendance == "uncertain":
             summary.uncertain += 1
+        elif guest.attendance == "confirmed":
+            summary.confirmed += 1
+        if guest.rsvp_id is not None:
+            summary.linked_to_rsvp += 1
+            claimed_rsvps.add(guest.rsvp_id)
 
-        items.append(AdminGuestRow.model_validate(guest, from_attributes=True))
+        items.append(
+            _guest_row(
+                guest,
+                # Grupo sem titular não deveria acontecer; se acontecer, o
+                # próprio nome é um rótulo melhor que uma string vazia.
+                group_labels.get(guest.group_index, guest.full_name),
+                group_sizes[guest.group_index],
+                rsvp_full_name,
+                rsvp_email,
+                rsvp_status,
+            )
+        )
+
+    total_rsvps = await db.scalar(select(func.count(Rsvp.id))) or 0
+    summary.rsvps_without_guest = total_rsvps - len(claimed_rsvps)
 
     return AdminGuestsOut(summary=summary, items=items)
 

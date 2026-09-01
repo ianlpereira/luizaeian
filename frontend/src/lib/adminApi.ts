@@ -12,9 +12,13 @@
 import { ApiError, api } from '@/lib/api'
 import type {
   AdminGiftsReport,
+  AdminGuestCreate,
+  AdminGuestRow,
   AdminGuestsReport,
+  AdminGuestUpdate,
   AdminMe,
   AdminPaymentsReport,
+  AdminRsvpMatchesReport,
   AdminRsvpsReport,
   AdminToken,
 } from '@/types/admin'
@@ -73,8 +77,15 @@ async function withAuthGuard<T>(call: () => Promise<T>): Promise<T> {
   }
 }
 
+// authHeaders() e withAuthGuard são agnósticos de método, então os quatro
+// verbos compartilham o mesmo tratamento de 401.
 export const adminApi = {
   get: <T>(path: string) => withAuthGuard(() => api.get<T>(path, { headers: authHeaders() })),
+  post: <T>(path: string, body: unknown) =>
+    withAuthGuard(() => api.post<T>(path, body, { headers: authHeaders() })),
+  patch: <T>(path: string, body: unknown) =>
+    withAuthGuard(() => api.patch<T>(path, body, { headers: authHeaders() })),
+  del: <T>(path: string) => withAuthGuard(() => api.del<T>(path, { headers: authHeaders() })),
 }
 
 // ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -86,6 +97,18 @@ export const adminLogin = (username: string, password: string) =>
 export const getAdminMe = () => adminApi.get<AdminMe>('/api/admin/me')
 
 export const getAdminGuests = () => adminApi.get<AdminGuestsReport>('/api/admin/guests')
+
+export const getAdminRsvpMatches = () =>
+  adminApi.get<AdminRsvpMatchesReport>('/api/admin/guests/rsvp-matches')
+
+export const createGuest = (payload: AdminGuestCreate) =>
+  adminApi.post<AdminGuestRow>('/api/admin/guests', payload)
+
+export const updateGuest = (guestId: string, payload: AdminGuestUpdate) =>
+  adminApi.patch<AdminGuestRow>(`/api/admin/guests/${guestId}`, payload)
+
+export const deleteGuest = (guestId: string) =>
+  adminApi.del<void>(`/api/admin/guests/${guestId}`)
 
 export const getAdminRsvps = () => adminApi.get<AdminRsvpsReport>('/api/admin/rsvps')
 

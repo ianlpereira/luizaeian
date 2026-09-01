@@ -1,6 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { getAdminGifts, getAdminGuests, getAdminPayments, getAdminRsvps } from '@/lib/adminApi'
+import {
+  getAdminGifts,
+  getAdminGuests,
+  getAdminPayments,
+  getAdminRsvpMatches,
+  getAdminRsvps,
+} from '@/lib/adminApi'
 import { useAdminAuthStore } from '@/store/adminAuth'
 
 /**
@@ -24,6 +30,18 @@ export function useAdminGuests() {
   return useQuery({
     queryKey: ['admin', 'guests'],
     queryFn: getAdminGuests,
+    enabled: isAuthenticated,
+    ...commonOptions,
+  })
+}
+
+/** Sugestões de vínculo lista × confirmações, usadas no drawer de conciliação. */
+export function useAdminRsvpMatches() {
+  const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated)
+
+  return useQuery({
+    queryKey: ['admin', 'rsvp-matches'],
+    queryFn: getAdminRsvpMatches,
     enabled: isAuthenticated,
     ...commonOptions,
   })

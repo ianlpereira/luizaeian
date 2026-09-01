@@ -5,13 +5,16 @@ Script de execução manual (não faz parte da cadeia de migrations). A planilha
 não fica no repositório, então o caminho do CSV é sempre um argumento.
 
 Cada execução substitui o conteúdo inteiro da tabela: apaga tudo e reinsere.
-Como nenhuma outra tabela referencia `guest` e nada é escrito nela pela API,
-isso é seguro e torna o script idempotente — rodar duas vezes deixa o mesmo
-resultado.
+Isso era inofensivo enquanto a tabela era só um espelho da planilha, mas o
+painel agora edita convidados e os vincula a confirmações de presença. Por isso
+o script **recusa reimportar** quando existe alguma linha com `edited_at`
+preenchido — reimportar apagaria essas edições sem aviso. `--force` mantém o
+comportamento antigo, agora como escolha explícita.
 
 Uso:
     cd backend && python -m scripts.import_guests --csv "../.localfiles/Lista.csv"
     cd backend && python -m scripts.import_guests --csv "..." --dry-run
+    cd backend && python -m scripts.import_guests --csv "..." --force
 """
 
 import argparse
@@ -98,9 +101,10 @@ def assign_groups(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     marca logo abaixo pertencem a ele. É esse encadeamento que dá sentido às
     linhas "Esposa" e "Namorado", que não trazem sobrenome.
 
-    Preenche `group_index`, `group_label` e `is_group_head` na primeira passada
-    e `group_size` na segunda — o tamanho só é conhecido no fim do bloco.
-    Consome e descarta a chave auxiliar `invite_mark`.
+    Preenche `group_index` e `is_group_head`. O rótulo e o tamanho do grupo NÃO
+    são gravados: são derivados na leitura, em `get_guests_report`, para que
+    renomear ou remover um convidado pelo painel não obrigue a atualizar os
+    irmãos. Consome e descarta a chave auxiliar `invite_mark`.
     """
     if not rows:
         return []
@@ -112,21 +116,14 @@ def assign_groups(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         )
 
     group_index = 0
-    label = ""
     for row in rows:
         if row.pop("invite_mark") in GROUP_HEAD_MARKS:
             group_index += 1
-            label = row["full_name"]
             row["is_group_head"] = True
         else:
             row["is_group_head"] = False
 
         row["group_index"] = group_index
-        row["group_label"] = label
-
-    sizes = Counter(row["group_index"] for row in rows)
-    for row in rows:
-        row["group_size"] = sizes[row["group_index"]]
 
     return rows
 
@@ -172,6 +169,11 @@ async def main() -> None:
         action="store_true",
         help="Só lê e valida a planilha, sem tocar no banco",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Reimporta mesmo que existam convidados editados pelo painel",
+    )
     args = parser.parse_args()
 
     rows = load_csv(args.csv)
@@ -181,12 +183,28 @@ async def main() -> None:
         print("\n(dry-run — nada foi gravado)")
         return
 
-    from sqlalchemy import delete
+    from sqlalchemy import delete, func, select
 
     from app.core.database import AsyncSessionLocal
     from app.models.guest import Guest
 
+    # `guest.rsvp_id` tem foreign key para `rsvp`. Sem importar o model, a tabela
+    # não entra no metadata e o SQLAlchemy levanta NoReferencedTableError ao
+    # montar o INSERT — mesmo que este script nunca toque em RSVP.
+    from app.models.rsvp import Rsvp  # noqa: F401
+
     async with AsyncSessionLocal() as db:
+        edited = await db.scalar(
+            select(func.count(Guest.id)).where(Guest.edited_at.is_not(None))
+        )
+        if edited and not args.force:
+            raise SystemExit(
+                f"\nAbortado: {edited} convidado(s) foram editados pelo painel.\n"
+                "Reimportar apagaria essas edições, inclusive os vínculos com as\n"
+                "confirmações de presença. Use --force se for exatamente isso que\n"
+                "você quer."
+            )
+
         removed = await db.execute(delete(Guest))
         db.add_all(Guest(**row) for row in rows)
         await db.commit()

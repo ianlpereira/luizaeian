@@ -18,6 +18,7 @@ from decimal import Decimal
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -74,7 +75,14 @@ async def seed(db: AsyncSession) -> dict[str, uuid.UUID]:
     Cenário mínimo que cobre as três armadilhas do modelo:
     presente oculto, presente com compra manual + pagamento aprovado, e
     pagamentos pendente/recusado que não podem entrar no total.
+
+    Esvazia `rsvp` antes: o relatório soma a tabela inteira, então qualquer
+    confirmação já existente no banco de desenvolvimento entraria na conta e
+    quebraria `total_guests`. O DELETE vive na transação revertida pela fixture
+    `db`, então nada é perdido de verdade.
     """
+    await db.execute(delete(Rsvp))
+
     visivel = Gift(title="Jogo de panelas", price=Decimal("300.00"), category="Itens de Casa")
     oculto = Gift(title="Rascunho", price=Decimal("10.00"), category="Itens de Casa", hidden=True)
     viagem = Gift(title="Passeio em Kyoto", price=Decimal("800.00"), category="Viagem")

@@ -6,6 +6,8 @@ de convidados, RSVP, presentes e pagamentos. Todas as rotas de relatório exigem
 o JWT emitido em POST /login, enviado no header `Authorization: Bearer <token>`.
 """
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,14 +23,18 @@ from app.core.security import (
 )
 from app.schemas.admin import (
     AdminGiftsOut,
+    AdminGuestCreateIn,
+    AdminGuestRow,
     AdminGuestsOut,
+    AdminGuestUpdateIn,
     AdminLoginIn,
     AdminMeOut,
     AdminPaymentsOut,
+    AdminRsvpMatchesOut,
     AdminRsvpsOut,
     AdminTokenOut,
 )
-from app.services import admin_report_service
+from app.services import admin_report_service, guest_service
 
 router = APIRouter()
 
@@ -75,8 +81,52 @@ async def guests_report(
     db: AsyncSession = Depends(get_db),
     _: str = Depends(get_current_admin),
 ) -> AdminGuestsOut:
-    """Lista de convidados importada da planilha dos noivos."""
+    """Lista de convidados, com o RSVP de cada um quando já vinculado."""
     return await admin_report_service.get_guests_report(db)
+
+
+# Precisa vir antes de qualquer rota com {guest_id}: declarada depois, o FastAPI
+# tentaria ler "rsvp-matches" como UUID e devolveria 422.
+@router.get("/guests/rsvp-matches", response_model=AdminRsvpMatchesOut)
+async def rsvp_matches(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminRsvpMatchesOut:
+    """Sugestões de vínculo entre a lista de convidados e as confirmações."""
+    return await guest_service.get_rsvp_matches(db)
+
+
+@router.post("/guests", response_model=AdminGuestRow, status_code=status.HTTP_201_CREATED)
+async def create_guest(
+    payload: AdminGuestCreateIn,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGuestRow:
+    """Adiciona um convidado a um grupo existente ou abre um grupo novo."""
+    guest = await guest_service.create_guest(db, payload)
+    return await admin_report_service.get_guest_row(db, guest.id)
+
+
+@router.patch("/guests/{guest_id}", response_model=AdminGuestRow)
+async def update_guest(
+    guest_id: uuid.UUID,
+    payload: AdminGuestUpdateIn,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGuestRow:
+    """Atualiza os campos enviados de um convidado, inclusive o vínculo de RSVP."""
+    await guest_service.update_guest(db, guest_id, payload)
+    return await admin_report_service.get_guest_row(db, guest_id)
+
+
+@router.delete("/guests/{guest_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_guest(
+    guest_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> None:
+    """Remove um convidado; se era o titular, promove outro membro do grupo."""
+    await guest_service.delete_guest(db, guest_id)
 
 
 @router.get("/rsvps", response_model=AdminRsvpsOut)

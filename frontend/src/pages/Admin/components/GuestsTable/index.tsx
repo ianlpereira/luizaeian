@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Card, Col, Input, Row, Statistic, Table, Tag } from 'antd'
+import { Badge, Button, Card, Col, Input, Row, Statistic, Table, Tag, Tooltip } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
 import type {
   AdminGuestRow,
+  AdminRsvpRow,
   Attendance,
   GuestSide,
   GuestSummary,
@@ -12,41 +13,28 @@ import type {
 } from '@/types/admin'
 import { normalizeText } from '@/utils/format'
 import type { CsvColumn } from '@/utils/toCsv'
+import {
+  ATTENDANCE_COLOR,
+  ATTENDANCE_LABEL,
+  EMPTY,
+  INVITE_TYPE_LABEL,
+  RSVP_ROLE_LABEL,
+  RSVP_STATUS_LABEL,
+  SENT_LABEL,
+  SIDE_LABEL,
+  filtersFrom,
+} from '../../guestLabels'
 import { ExportCsvButton } from '../ExportCsvButton'
+import { GuestDrawer } from '../GuestDrawer'
+import { RsvpMatchDrawer } from '../RsvpMatchDrawer'
 import * as S from './styles'
 
 interface GuestsTableProps {
   rows: AdminGuestRow[]
   summary?: GuestSummary
+  rsvps: AdminRsvpRow[]
   loading: boolean
 }
-
-const INVITE_TYPE_LABEL: Record<InviteType, string> = {
-  physical: 'Físico',
-  digital: 'Digital',
-}
-
-const SIDE_LABEL: Record<GuestSide, string> = {
-  bride: 'Noiva',
-  groom: 'Noivo',
-}
-
-const SENT_LABEL: Record<SentStatus, string> = {
-  sent: 'Enviado',
-  pending: 'Pendente',
-}
-
-const ATTENDANCE_LABEL: Record<Attendance, string> = {
-  uncertain: 'Incerteza',
-  declined: 'Não vai',
-}
-
-const ATTENDANCE_COLOR: Record<Attendance, string> = {
-  uncertain: 'warning',
-  declined: 'error',
-}
-
-const EMPTY = '—'
 
 const renderSent = (value: SentStatus | null) =>
   value === null ? (
@@ -54,10 +42,6 @@ const renderSent = (value: SentStatus | null) =>
   ) : (
     <Tag color={value === 'sent' ? 'success' : 'default'}>{SENT_LABEL[value]}</Tag>
   )
-
-/** Filtros de coluna a partir de um mapa de rótulos — a ordem das chaves manda. */
-const filtersFrom = <T extends string>(labels: Record<T, string>) =>
-  (Object.keys(labels) as T[]).map((value) => ({ text: labels[value], value }))
 
 const columns: ColumnsType<AdminGuestRow> = [
   {
@@ -76,6 +60,39 @@ const columns: ColumnsType<AdminGuestRow> = [
         {row.group_size > 1 && <S.GroupSize>+{row.group_size - 1}</S.GroupSize>}
       </>
     ),
+  },
+  {
+    title: 'RSVP',
+    dataIndex: 'rsvp_status',
+    filters: [
+      { text: 'Vinculado', value: 'linked' },
+      { text: 'Sem vínculo', value: 'none' },
+    ],
+    onFilter: (value, row) =>
+      value === 'linked' ? row.rsvp_id !== null : row.rsvp_id === null,
+    render: (status: string | null, row) => {
+      if (!row.rsvp_id) return EMPTY
+
+      const tag = (
+        <Tag color={status === 'confirmed' ? 'success' : 'error'}>
+          {RSVP_STATUS_LABEL[status ?? ''] ?? status}
+        </Tag>
+      )
+
+      // O nome do RSVP só interessa quando difere — é o sinal de que a
+      // confirmação veio no nome de outra pessoa da família.
+      return row.rsvp_full_name && row.rsvp_full_name !== row.full_name ? (
+        <Tooltip
+          title={`${row.rsvp_full_name}${
+            row.rsvp_role ? ` · ${RSVP_ROLE_LABEL[row.rsvp_role]}` : ''
+          }`}
+        >
+          {tag}
+        </Tooltip>
+      ) : (
+        tag
+      )
+    },
   },
   {
     title: 'Convite',
@@ -131,10 +148,19 @@ const csvColumns: CsvColumn<AdminGuestRow>[] = [
     value: (row) => (row.save_the_date_status ? SENT_LABEL[row.save_the_date_status] : ''),
   },
   { header: 'Convite enviado', value: (row) => SENT_LABEL[row.invite_sent_status] },
+  {
+    header: 'RSVP',
+    value: (row) => (row.rsvp_status ? RSVP_STATUS_LABEL[row.rsvp_status] ?? row.rsvp_status : ''),
+  },
+  { header: 'RSVP no nome de', value: (row) => row.rsvp_full_name ?? '' },
 ]
 
-export function GuestsTable({ rows, summary, loading }: GuestsTableProps) {
+export function GuestsTable({ rows, summary, rsvps, loading }: GuestsTableProps) {
   const [search, setSearch] = useState('')
+  // `editing` guarda o convidado aberto; `null` com o drawer aberto = criação.
+  const [editing, setEditing] = useState<AdminGuestRow | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [matchOpen, setMatchOpen] = useState(false)
 
   // A lista inteira já vem numa única resposta, então a busca é local. Casar
   // também com o rótulo do grupo faz o nome do titular trazer a família toda.
@@ -149,13 +175,21 @@ export function GuestsTable({ rows, summary, loading }: GuestsTableProps) {
     )
   }, [rows, search])
 
+  const openGuest = (guest: AdminGuestRow | null) => {
+    setEditing(guest)
+    setDrawerOpen(true)
+  }
+
+  // O badge chama atenção para as confirmações que ninguém reivindicou ainda.
+  const pendingLinks = summary?.rsvps_without_guest ?? 0
+
   const cards = [
     { title: 'Convidados', value: summary?.total ?? 0 },
     { title: 'Convites (grupos)', value: summary?.total_groups ?? 0 },
-    { title: 'Convites físicos', value: summary?.physical_invites ?? 0 },
-    { title: 'Convites digitais', value: summary?.digital_invites ?? 0 },
     { title: 'Convites enviados', value: summary?.invites_sent ?? 0 },
     { title: 'Convites pendentes', value: summary?.invites_pending ?? 0 },
+    { title: 'Vinculados ao RSVP', value: summary?.linked_to_rsvp ?? 0 },
+    { title: 'RSVPs fora da lista', value: summary?.rsvps_without_guest ?? 0 },
   ]
 
   return (
@@ -181,6 +215,12 @@ export function GuestsTable({ rows, summary, loading }: GuestsTableProps) {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
+          <Badge count={pendingLinks} size="small">
+            <Button onClick={() => setMatchOpen(true)}>Conciliar RSVP</Button>
+          </Badge>
+          <Button type="primary" onClick={() => openGuest(null)}>
+            Adicionar convidado
+          </Button>
           <ExportCsvButton filePrefix="convidados" columns={csvColumns} rows={filteredRows} />
         </S.Tools>
       </S.Toolbar>
@@ -192,7 +232,21 @@ export function GuestsTable({ rows, summary, loading }: GuestsTableProps) {
         loading={loading}
         scroll={{ x: 'max-content' }}
         pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (total) => `${total} convidados` }}
+        onRow={(row) => ({
+          onClick: () => openGuest(row),
+          style: { cursor: 'pointer' },
+        })}
       />
+
+      <GuestDrawer
+        open={drawerOpen}
+        guest={editing}
+        rows={rows}
+        rsvps={rsvps}
+        onClose={() => setDrawerOpen(false)}
+      />
+
+      <RsvpMatchDrawer open={matchOpen} onClose={() => setMatchOpen(false)} />
     </S.Wrapper>
   )
 }
