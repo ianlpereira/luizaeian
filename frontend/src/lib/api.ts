@@ -47,9 +47,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
     let res: Response
     try {
+      // `...init` vem primeiro: se viesse depois, um init.headers substituiria o
+      // objeto já mesclado e o Content-Type sumiria silenciosamente.
       res = await fetch(`${BASE_URL}${path}`, {
-        headers: { 'Content-Type': 'application/json', ...init?.headers },
         ...init,
+        headers: { 'Content-Type': 'application/json', ...init?.headers },
       })
     } catch (networkErr) {
       // Erro de rede (CORS durante cold start, timeout, etc.) — tenta de novo
@@ -83,9 +85,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body: unknown) =>
-    request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
+  // `init` opcional permite headers extras (ex.: Authorization na área admin)
+  // sem duplicar a lógica de retry.
+  get: <T>(path: string, init?: RequestInit) => request<T>(path, init),
+  post: <T>(path: string, body: unknown, init?: RequestInit) =>
+    request<T>(path, { ...init, method: 'POST', body: JSON.stringify(body) }),
 }
 
 export { ApiError }

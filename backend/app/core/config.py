@@ -17,9 +17,17 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: str = "change-me-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
-    # Chave para rotas administrativas (header X-Admin-Key)
-    ADMIN_API_KEY: str = ""
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120  # 2 horas — validade do token do admin
+
+    # ── Área administrativa ───────────────────────────────────────────────────
+    # Credenciais do único usuário administrador. O hash é gerado por:
+    #     cd backend && python -m scripts.hash_admin_password
+    # Se qualquer um dos dois estiver vazio, o login fica desativado (fail-closed).
+    ADMIN_USERNAME: str = ""
+    ADMIN_PASSWORD_HASH: str = ""
+    # Proteção contra força bruta no endpoint de login (janela deslizante em memória)
+    ADMIN_LOGIN_MAX_ATTEMPTS: int = 5
+    ADMIN_LOGIN_WINDOW_MINUTES: int = 15
 
     # CORS — str para evitar conflito de parse com env vars legadas no Render
     CORS_ORIGINS: str = (

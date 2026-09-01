@@ -1,22 +1,14 @@
 import html
-import secrets
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
-from app.core.config import settings
 from app.core.database import get_db
 from app.models.rsvp import Rsvp
 from app.schemas.rsvp import RsvpIn, RsvpOut
 
 router = APIRouter()
-
-
-async def require_admin(x_admin_key: str = Header(...)) -> None:
-    if not settings.ADMIN_API_KEY or not secrets.compare_digest(x_admin_key, settings.ADMIN_API_KEY):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado")
 
 
 @router.post("", response_model=RsvpOut, status_code=status.HTTP_201_CREATED)
@@ -58,8 +50,5 @@ async def submit_rsvp(
     return rsvp
 
 
-@router.get("", response_model=list[RsvpOut], dependencies=[Depends(require_admin)])
-async def list_rsvps(db: AsyncSession = Depends(get_db)) -> list[Rsvp]:
-    """Lista todas as confirmações de presença. Requer header X-Admin-Key."""
-    result = await db.execute(select(Rsvp).order_by(Rsvp.created_at.desc()))
-    return list(result.scalars().all())
+# A listagem de confirmações vive em GET /api/admin/rsvps, protegida por JWT.
+# O antigo GET /api/rsvp com header X-Admin-Key foi removido.

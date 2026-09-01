@@ -1,0 +1,11 @@
+# Normaliza as quebras de linha no checkout.
+# Sem isso, o Git no Windows entrega os .sh com CRLF e o container não consegue
+# executá-los ("exec /app/entrypoint.sh: no such file or directory"), porque o
+# bind mount do docker-compose sobrepõe a cópia que está na imagem.
+
+* text=auto
+
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

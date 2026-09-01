@@ -28,6 +28,7 @@ export default defineConfig({
          * ui-lib      – styled-components (large CSS-in-JS runtime)
          * forms       – react-hook-form + zod + resolvers (only checkout/RSVP)
          * misc        – zustand, dompurify, canvas-confetti (small utilities)
+         * antd        – Ant Design (apenas a página /admin, carregada via lazy)
          *
          * All section components are kept out of manual chunks so Rollup can
          * tree-shake and assign them to their own dynamic-import chunks from
@@ -39,6 +40,7 @@ export default defineConfig({
           'ui-lib': ['styled-components'],
           forms: ['react-hook-form', 'zod', '@hookform/resolvers'],
           misc: ['zustand', 'dompurify', 'canvas-confetti'],
+          antd: ['antd'],
         },
       },
     },

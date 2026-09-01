@@ -28,6 +28,13 @@ services:
       - ./backend:/app
     ports:
       - "8000:8000"
+    # ADMIN_USERNAME, ADMIN_PASSWORD_HASH e as credenciais do Mercado Pago vivem
+    # em backend/.env (copie de backend/.env.example). O Settings do pydantic lê
+    # esse arquivo direto de /app/.env, que já vem pelo volume acima.
+    #
+    # Não use `env_file:` nem a lista `environment:` para o hash bcrypt: o
+    # Compose interpola os cifrões nos dois casos e `$2b$12$Abc...` chega
+    # truncado como `$2b$12...`, quebrando o login sem nenhum erro visível.
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/luizaeian
       - DEBUG=true

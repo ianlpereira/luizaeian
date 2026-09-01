@@ -8,6 +8,10 @@ pydantic[email]==2.10.4
 pydantic-settings==2.7.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+# Pin explícito: passlib 1.7.4 lê bcrypt.__about__.__version__, removido no bcrypt 4.1.
+# Sem o pin, todo hash/verify emite um AttributeError no log (o hash funciona,
+# mas o ruído esconde erros de verdade). Não subir para >= 4.1 sem trocar o passlib.
+bcrypt==4.0.1
 python-multipart==0.0.20
 httpx==0.28.1
 mercadopago==2.2.3
