@@ -1,4 +1,4 @@
-import html
+import re
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
@@ -9,6 +9,12 @@ from app.models.message import Message
 from app.schemas.message import MessageIn, MessageOut
 
 router = APIRouter()
+
+_TAG_RE = re.compile(r"<[^>]*>")
+
+
+def _strip_tags(value: str) -> str:
+    return _TAG_RE.sub("", value)
 
 
 @router.get("", response_model=list[MessageOut])
@@ -31,11 +37,13 @@ async def post_message(
 ) -> Message:
     """
     Publica uma nova mensagem no mural.
-    SEC-01: inputs sanitizados via html.escape antes de persistir.
+    SEC-01: tags HTML removidas antes de persistir (o frontend já renderiza
+    como texto puro, então aqui só cabe remover marcação — escapar entidades
+    causaria dupla codificação, já que o frontend também sanitiza via DOMPurify).
     """
     message = Message(
-        author_name=html.escape(payload.author_name),
-        content=html.escape(payload.content),
+        author_name=_strip_tags(payload.author_name),
+        content=_strip_tags(payload.content),
     )
     db.add(message)
     await db.commit()
