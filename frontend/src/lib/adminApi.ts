@@ -12,6 +12,7 @@
 import { ApiError, api } from '@/lib/api'
 import type {
   AdminGiftLedgerReport,
+  AdminGiftLedgerRow,
   AdminGiftPurchaseMatchesReport,
   AdminGiftPurchaseRow,
   AdminGiftPurchaseUpdate,
@@ -20,6 +21,7 @@ import type {
   AdminGuestRow,
   AdminGuestsReport,
   AdminGuestUpdate,
+  AdminManualTransaction,
   AdminMe,
   AdminRsvpMatchesReport,
   AdminRsvpsReport,
@@ -125,3 +127,12 @@ export const getAdminGiftPurchaseMatches = () =>
 
 export const updateGiftPurchase = (purchaseId: string, payload: AdminGiftPurchaseUpdate) =>
   adminApi.patch<AdminGiftPurchaseRow>(`/api/admin/gift-purchases/${purchaseId}`, payload)
+
+export const createManualTransaction = (payload: AdminManualTransaction) =>
+  adminApi.post<AdminGiftLedgerRow>('/api/admin/manual-transactions', payload)
+
+export const updateManualTransaction = (purchaseId: string, payload: AdminManualTransaction) =>
+  adminApi.patch<AdminGiftLedgerRow>(`/api/admin/manual-transactions/${purchaseId}`, payload)
+
+export const deleteManualTransaction = (purchaseId: string) =>
+  adminApi.del<void>(`/api/admin/manual-transactions/${purchaseId}`)

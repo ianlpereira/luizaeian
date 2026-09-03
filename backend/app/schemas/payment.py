@@ -5,14 +5,29 @@ Schemas Pydantic para os endpoints de pagamento.
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, Field, model_validator
 
 
 # ── Tipos ─────────────────────────────────────────────────────────────────────
 
+# Métodos do checkout público. Não incluir os manuais aqui: PaymentCreateIn usa
+# este alias, e um valor a mais viraria na hora um corpo válido de requisição
+# anônima em POST /api/payments.
 PaymentMethod = Literal["pix", "credit_card"]
+
+# Métodos que só o painel administrativo registra, para dinheiro que entrou fora
+# do Mercado Pago.
+ManualMethod = Literal["bank_transfer", "camicado", "cash", "other"]
+
+# Tudo que pode aparecer na coluna Método do relatório unificado.
+LedgerMethod = PaymentMethod | ManualMethod
+
+# Pix e cartão são os únicos métodos que o Mercado Pago produz, então o que não
+# é deles foi lançado à mão pelo painel — e só isso é editável.
+MANUAL_METHODS: frozenset[str] = frozenset(get_args(ManualMethod))
+
 PaymentStatusLiteral = Literal[
     "pending", "approved", "rejected", "cancelled", "expired", "in_process"
 ]

@@ -1,5 +1,6 @@
 """Testes de login e proteção das rotas administrativas. Não usam banco."""
 
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -72,6 +73,26 @@ async def test_sem_header_retorna_401_e_nao_422(
 ) -> None:
     """Regressão: o esquema antigo (Header(...)) devolvia 422/403 sem o header."""
     response = await client.get(path)
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+# As rotas de escrita precisam do mesmo cuidado — e um 401 tem que vir antes de
+# qualquer validação de corpo, senão um anônimo descobre o formato do payload.
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [
+        ("post", "/api/admin/manual-transactions"),
+        ("patch", f"/api/admin/manual-transactions/{uuid.uuid4()}"),
+        ("delete", f"/api/admin/manual-transactions/{uuid.uuid4()}"),
+        ("post", "/api/admin/guests"),
+    ],
+)
+async def test_escritas_sem_header_retornam_401(
+    client: AsyncClient, admin_env: None, method: str, path: str
+) -> None:
+    response = await client.request(method, path, json={})
 
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Bearer"

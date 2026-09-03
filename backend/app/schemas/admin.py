@@ -12,7 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.schemas.payment import PaymentMethod, PaymentStatusLiteral
+from app.schemas.payment import LedgerMethod, ManualMethod, PaymentStatusLiteral
 from app.schemas.rsvp import Companion
 
 
@@ -124,17 +124,21 @@ class AdminGiftLedgerRow(BaseModel):
     key: str
     purchase_id: uuid.UUID | None
     payment_id: uuid.UUID | None
-    gift_id: uuid.UUID
+    # NULL num lançamento manual sem presente de catálogo atrás.
+    gift_id: uuid.UUID | None
     gift_title: str | None
     buyer_name: str
     message: str | None
     status: LedgerStatusLiteral
-    method: PaymentMethod | None
+    method: LedgerMethod | None
     amount: float | None
     mp_payment_id: int | None
     guest_id: uuid.UUID | None
     guest_full_name: str | None
     created_at: datetime
+    # Lançado à mão pelo painel, e por isso editável. As linhas do Mercado Pago
+    # espelham um sistema externo e são só leitura.
+    is_manual: bool
 
 
 class AdminGiftLedgerOut(BaseModel):
@@ -146,7 +150,7 @@ class AdminGiftLedgerOut(BaseModel):
 
 class AdminGiftPurchaseRow(BaseModel):
     id: uuid.UUID
-    gift_id: uuid.UUID
+    gift_id: uuid.UUID | None
     gift_title: str | None
     buyer_name: str
     message: str | None
@@ -159,6 +163,34 @@ class AdminGiftPurchaseUpdateIn(BaseModel):
     """Único campo possível de mudar aqui: o vínculo com um convidado. `null` desfaz."""
 
     guest_id: uuid.UUID | None = None
+
+
+# ── Lançamento manual ─────────────────────────────────────────────────────────
+
+class AdminManualTransactionIn(BaseModel):
+    """
+    Dinheiro que entrou fora do Mercado Pago: transferência, Camicado, dinheiro.
+
+    `gift_id` e `guest_id` são opcionais de propósito — uma transferência
+    costuma não corresponder a nenhum presente do catálogo, e o convidado pode
+    ser identificado depois, pela tela de conciliação.
+    """
+
+    buyer_name: str = Field(..., min_length=2, max_length=100)
+    amount: float = Field(..., gt=0)
+    method: ManualMethod
+    created_at: datetime
+    gift_id: uuid.UUID | None = None
+    guest_id: uuid.UUID | None = None
+    message: str | None = Field(default=None, max_length=300)
+
+    @field_validator("buyer_name")
+    @classmethod
+    def strip_buyer_name(cls, value: str) -> str:
+        name = value.strip()
+        if len(name) < 2:
+            raise ValueError("Nome precisa ter ao menos 2 caracteres.")
+        return name
 
 
 # ── Lista de convidados ───────────────────────────────────────────────────────

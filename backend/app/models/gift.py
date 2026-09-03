@@ -28,10 +28,12 @@ class Gift(UUIDMixin, TimestampMixin, Base):
 class GiftPurchase(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "gift_purchases"
 
-    gift_id: Mapped[uuid.UUID] = mapped_column(
+    # NULL quando a compra não aponta para nenhum presente do catálogo — caso
+    # dos lançamentos manuais. SET NULL pelo mesmo motivo de payments.gift_id.
+    gift_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("gifts.id", ondelete="CASCADE"),
-        nullable=False,
+        ForeignKey("gifts.id", ondelete="SET NULL"),
+        nullable=True,
     )
     buyer_name: Mapped[str] = mapped_column(String(100), nullable=False)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -56,4 +58,4 @@ class GiftPurchase(UUIDMixin, TimestampMixin, Base):
         unique=True,
     )
 
-    gift: Mapped["Gift"] = relationship("Gift", back_populates="purchases")
+    gift: Mapped["Gift | None"] = relationship("Gift", back_populates="purchases")

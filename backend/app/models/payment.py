@@ -20,11 +20,13 @@ from app.core.database import Base
 class Payment(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "payments"
 
-    # Presente associado
-    gift_id: Mapped[uuid.UUID] = mapped_column(
+    # Presente associado. NULL num lançamento manual sem presente de catálogo
+    # atrás — uma transferência bancária, por exemplo. SET NULL em vez de
+    # CASCADE porque apagar um presente não pode apagar o dinheiro que entrou.
+    gift_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("gifts.id", ondelete="CASCADE"),
-        nullable=False,
+        ForeignKey("gifts.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
     # ID do pagamento no Mercado Pago (BigInteger — MP usa int64)
