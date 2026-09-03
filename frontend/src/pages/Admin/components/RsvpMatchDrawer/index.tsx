@@ -11,15 +11,20 @@
 import { useMemo, useState } from 'react'
 import { App, Alert, Button, Collapse, Drawer, Select, Spin, Tag } from 'antd'
 
-import { useAdminRsvpMatches } from '@/hooks/useAdminReports'
+import { useAdminGuests, useAdminRsvpMatches, useAdminRsvps } from '@/hooks/useAdminReports'
 import { guestErrorMessage, useUpdateGuest } from '@/hooks/useAdminGuestMutations'
 import type { AdminRsvpMatchEntry } from '@/types/admin'
 import { RSVP_ROLE_LABEL, RSVP_STATUS_LABEL } from '../../guestLabels'
+import { GuestDrawer } from '../GuestDrawer'
+import { GuestPicker } from '../GuestPicker'
 import * as S from './styles'
 
 interface RsvpMatchDrawerProps {
   open: boolean
   onClose: () => void
+  /** Quando presente, restringe o drawer às pessoas deste RSVP — usado ao abrir
+   *  a partir da aba Confirmações, em vez da conciliação geral. */
+  rsvpId?: string
 }
 
 /** Chave estável de uma entrada: um RSVP tem várias pessoas com papéis distintos. */
@@ -38,17 +43,31 @@ function EntryHeader({ entry }: { entry: AdminRsvpMatchEntry }) {
   )
 }
 
-export function RsvpMatchDrawer({ open, onClose }: RsvpMatchDrawerProps) {
+export function RsvpMatchDrawer({ open, onClose, rsvpId }: RsvpMatchDrawerProps) {
   const { message } = App.useApp()
   const matches = useAdminRsvpMatches()
+  const guests = useAdminGuests()
+  const rsvps = useAdminRsvps()
   const updateGuest = useUpdateGuest()
 
   // Escolha manual nos casos ambíguos, por entrada.
   const [picked, setPicked] = useState<Record<string, string>>({})
+  // Escolha manual em "Fora da lista", quando o nome não bate com ninguém.
+  const [manualPicked, setManualPicked] = useState<Record<string, string>>({})
   const [bulkRunning, setBulkRunning] = useState(false)
+  // Entrada para a qual o drawer "Adicionar convidado" está aberto.
+  const [creatingFor, setCreatingFor] = useState<AdminRsvpMatchEntry | null>(null)
 
-  const items = matches.data?.items ?? []
+  const allItems = matches.data?.items ?? []
+  const items = useMemo(
+    () => (rsvpId ? allItems.filter((entry) => entry.rsvp_id === rsvpId) : allItems),
+    [allItems, rsvpId],
+  )
   const summary = matches.data?.summary
+  const guestRows = guests.data?.items ?? []
+  const title = rsvpId
+    ? `Vincular “${items[0]?.rsvp_full_name ?? ''}”`
+    : 'Conciliar confirmações'
 
   const groups = useMemo(
     () => ({
@@ -116,7 +135,7 @@ export function RsvpMatchDrawer({ open, onClose }: RsvpMatchDrawerProps) {
   }
 
   return (
-    <Drawer open={open} onClose={onClose} width={520} title="Conciliar confirmações">
+    <Drawer open={open} onClose={onClose} width={520} title={title}>
       {matches.isLoading && <Spin />}
 
       {matches.error && (
@@ -128,7 +147,7 @@ export function RsvpMatchDrawer({ open, onClose }: RsvpMatchDrawerProps) {
         />
       )}
 
-      {summary && (
+      {!rsvpId && summary && (
         <S.SectionHint>
           {summary.rsvps_total} confirmação(ões) recebida(s), {summary.entries_total} pessoa(s)
           citada(s) · {summary.linked} já vinculada(s)
@@ -216,11 +235,29 @@ export function RsvpMatchDrawer({ open, onClose }: RsvpMatchDrawerProps) {
         </S.SectionHint>
 
         {groups.missing.length === 0 && <S.Empty>Todo mundo que respondeu está na lista.</S.Empty>}
-        {groups.missing.map((entry) => (
-          <S.Entry key={entryKey(entry)}>
-            <EntryHeader entry={entry} />
-          </S.Entry>
-        ))}
+        {groups.missing.map((entry) => {
+          const key = entryKey(entry)
+          return (
+            <S.Entry key={key}>
+              <EntryHeader entry={entry} />
+              <GuestPicker
+                guests={guestRows}
+                value={manualPicked[key]}
+                onChange={(guestId) => setManualPicked((prev) => ({ ...prev, [key]: guestId }))}
+              />
+              <Button
+                size="small"
+                disabled={!manualPicked[key]}
+                onClick={() => handleConfirm(entry, manualPicked[key])}
+              >
+                Vincular
+              </Button>
+              <Button size="small" onClick={() => setCreatingFor(entry)}>
+                Criar convidado
+              </Button>
+            </S.Entry>
+          )
+        })}
       </S.Section>
 
       <Collapse
@@ -243,6 +280,19 @@ export function RsvpMatchDrawer({ open, onClose }: RsvpMatchDrawerProps) {
             ),
           },
         ]}
+      />
+
+      <GuestDrawer
+        open={creatingFor !== null}
+        guest={null}
+        rows={guestRows}
+        rsvps={rsvps.data?.items ?? []}
+        presetFullName={creatingFor?.entry_name}
+        onCreated={async (created) => {
+          if (!creatingFor) return
+          await link(creatingFor, created.id)
+        }}
+        onClose={() => setCreatingFor(null)}
       />
     </Drawer>
   )

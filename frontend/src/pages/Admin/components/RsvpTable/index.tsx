@@ -1,10 +1,13 @@
-import { Table, Tag } from 'antd'
+import { useMemo, useState } from 'react'
+import { Button, Table, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
-import type { AdminRsvpRow } from '@/types/admin'
+import { useAdminRsvpMatches } from '@/hooks/useAdminReports'
+import type { AdminRsvpMatchEntry, AdminRsvpRow } from '@/types/admin'
 import { formatDateTime } from '@/utils/format'
 import type { CsvColumn } from '@/utils/toCsv'
 import { ExportCsvButton } from '../ExportCsvButton'
+import { RsvpMatchDrawer } from '../RsvpMatchDrawer'
 import * as S from './styles'
 
 interface RsvpTableProps {
@@ -12,7 +15,22 @@ interface RsvpTableProps {
   loading: boolean
 }
 
-const columns: ColumnsType<AdminRsvpRow> = [
+/** `rsvp_id` -> quantas das pessoas citadas nesse RSVP já têm convidado vinculado. */
+function countLinks(items: AdminRsvpMatchEntry[]): Record<string, { linked: number; total: number }> {
+  const counts: Record<string, { linked: number; total: number }> = {}
+  for (const entry of items) {
+    const bucket = (counts[entry.rsvp_id] ??= { linked: 0, total: 0 })
+    bucket.total += 1
+    if (entry.state === 'linked') bucket.linked += 1
+  }
+  return counts
+}
+
+function buildColumns(
+  links: Record<string, { linked: number; total: number }>,
+  onLink: (rsvpId: string) => void,
+): ColumnsType<AdminRsvpRow> {
+  return [
   {
     title: 'Nome',
     dataIndex: 'full_name',
@@ -51,7 +69,35 @@ const columns: ColumnsType<AdminRsvpRow> = [
     sorter: (a, b) => a.created_at.localeCompare(b.created_at),
     render: (value: string) => formatDateTime(value),
   },
+  {
+    title: 'Vínculo',
+    key: 'link',
+    filters: [
+      { text: 'Completo', value: 'complete' },
+      { text: 'Pendente', value: 'pending' },
+    ],
+    onFilter: (value, row) => {
+      const bucket = links[row.id]
+      const complete = bucket !== undefined && bucket.linked === bucket.total
+      return value === 'complete' ? complete : !complete
+    },
+    render: (_: unknown, row: AdminRsvpRow) => {
+      const bucket = links[row.id] ?? { linked: 0, total: row.headcount }
+      const complete = bucket.linked === bucket.total
+      return (
+        <S.LinkCell>
+          <Tag color={complete ? 'success' : 'warning'}>
+            {bucket.linked}/{bucket.total} vinculado(s)
+          </Tag>
+          <Button size="small" onClick={() => onLink(row.id)}>
+            Vincular
+          </Button>
+        </S.LinkCell>
+      )
+    },
+  },
 ]
+}
 
 const csvColumns: CsvColumn<AdminRsvpRow>[] = [
   { header: 'Nome', value: (row) => row.full_name },
@@ -63,6 +109,12 @@ const csvColumns: CsvColumn<AdminRsvpRow>[] = [
 ]
 
 export function RsvpTable({ rows, loading }: RsvpTableProps) {
+  const matches = useAdminRsvpMatches()
+  const [linkingRsvpId, setLinkingRsvpId] = useState<string | null>(null)
+
+  const links = useMemo(() => countLinks(matches.data?.items ?? []), [matches.data])
+  const columns = useMemo(() => buildColumns(links, setLinkingRsvpId), [links])
+
   return (
     <S.Wrapper>
       <S.Toolbar>
@@ -88,6 +140,12 @@ export function RsvpTable({ rows, loading }: RsvpTableProps) {
             </S.CompanionList>
           ),
         }}
+      />
+
+      <RsvpMatchDrawer
+        open={linkingRsvpId !== null}
+        rsvpId={linkingRsvpId ?? undefined}
+        onClose={() => setLinkingRsvpId(null)}
       />
     </S.Wrapper>
   )

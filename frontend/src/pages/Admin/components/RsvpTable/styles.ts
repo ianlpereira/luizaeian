@@ -28,3 +28,9 @@ export const CompanionList = styled.ul`
   list-style: disc;
   color: ${({ theme }) => theme.colors.text.secondary};
 `
+
+export const LinkCell = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+`

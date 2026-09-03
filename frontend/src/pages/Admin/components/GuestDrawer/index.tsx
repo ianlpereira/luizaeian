@@ -36,6 +36,11 @@ interface GuestDrawerProps {
   rows: AdminGuestRow[]
   rsvps: AdminRsvpRow[]
   onClose: () => void
+  /** Nome sugerido ao abrir em modo de criação — ex.: veio de um RSVP sem vínculo. */
+  presetFullName?: string
+  /** Disparado com o convidado recém-criado, antes de fechar. Usado para vincular
+   *  logo em seguida (RSVP ou compra) sem exigir uma segunda ida ao painel. */
+  onCreated?: (guest: AdminGuestRow) => void | Promise<void>
 }
 
 interface FormValues {
@@ -53,7 +58,15 @@ interface FormValues {
 
 const NEW_GROUP = -1
 
-export function GuestDrawer({ open, guest, rows, rsvps, onClose }: GuestDrawerProps) {
+export function GuestDrawer({
+  open,
+  guest,
+  rows,
+  rsvps,
+  onClose,
+  presetFullName,
+  onCreated,
+}: GuestDrawerProps) {
   const [form] = Form.useForm<FormValues>()
   const { message, modal } = App.useApp()
 
@@ -106,7 +119,7 @@ export function GuestDrawer({ open, guest, rows, rsvps, onClose }: GuestDrawerPr
             group_index: guest.group_index,
           }
         : {
-            full_name: '',
+            full_name: presetFullName ?? '',
             side: 'bride',
             invite_type: 'digital',
             attendance: null,
@@ -117,7 +130,7 @@ export function GuestDrawer({ open, guest, rows, rsvps, onClose }: GuestDrawerPr
             group_index: NEW_GROUP,
           },
     )
-  }, [open, guest, form])
+  }, [open, guest, presetFullName, form])
 
   const handleSubmit = async (values: FormValues) => {
     try {
@@ -145,8 +158,9 @@ export function GuestDrawer({ open, guest, rows, rsvps, onClose }: GuestDrawerPr
           save_the_date_status: values.save_the_date_status ?? null,
           invite_sent_status: values.invite_sent_status,
         }
-        await createGuest.mutateAsync(payload)
+        const created = await createGuest.mutateAsync(payload)
         message.success('Convidado adicionado.')
+        if (onCreated) await onCreated(created)
       }
       onClose()
     } catch (error) {
