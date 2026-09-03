@@ -67,15 +67,20 @@ async def _get_or_404(db: AsyncSession, guest_id: uuid.UUID) -> Guest:
 
 async def _validate_rsvp_link(
     db: AsyncSession, rsvp_id: uuid.UUID | None, rsvp_role: str | None
-) -> None:
-    """Vínculo é sempre par: sem RSVP não há papel, com RSVP o papel é obrigatório."""
+) -> Rsvp | None:
+    """
+    Vínculo é sempre par: sem RSVP não há papel, com RSVP o papel é obrigatório.
+
+    Devolve o Rsvp carregado quando há vínculo — quem chama usa para gravar o
+    comparecimento a partir dele, sem precisar buscar de novo.
+    """
     if rsvp_id is None:
         if rsvp_role is not None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Papel no RSVP só faz sentido junto de um RSVP.",
             )
-        return
+        return None
 
     if rsvp_role is None:
         raise HTTPException(
@@ -83,10 +88,12 @@ async def _validate_rsvp_link(
             detail="Informe se a pessoa é o titular ou acompanhante do RSVP.",
         )
 
-    if await db.get(Rsvp, rsvp_id) is None:
+    rsvp = await db.get(Rsvp, rsvp_id)
+    if rsvp is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Confirmação não encontrada."
         )
+    return rsvp
 
 
 # ── Escrita ───────────────────────────────────────────────────────────────────
@@ -142,6 +149,12 @@ async def update_guest(
     Usa `model_fields_set` em vez de descartar `None`: enviar `rsvp_id: null` é
     como o painel desfaz um vínculo, e `attendance: null` é como volta o
     convidado para "sem resposta".
+
+    O RSVP é a fonte oficial de comparecimento para quem está vinculado: criar
+    ou trocar o vínculo grava `attendance` a partir do `status` do RSVP na
+    mesma chamada, a não ser que o PATCH também tenha mandado `attendance`
+    explicitamente — aí o valor pedido prevalece. Quem não tem RSVP (avisou
+    por fora do site) continua com comparecimento só manual, sem essa regra.
     """
     guest = await _get_or_404(db, guest_id)
     sent = payload.model_fields_set
@@ -151,9 +164,11 @@ async def update_guest(
         # o papel sem reenviar o rsvp_id.
         rsvp_id = payload.rsvp_id if "rsvp_id" in sent else guest.rsvp_id
         rsvp_role = payload.rsvp_role if "rsvp_role" in sent else guest.rsvp_role
-        await _validate_rsvp_link(db, rsvp_id, rsvp_role)
+        rsvp = await _validate_rsvp_link(db, rsvp_id, rsvp_role)
         guest.rsvp_id = rsvp_id
         guest.rsvp_role = rsvp_role
+        if rsvp is not None and "attendance" not in sent:
+            guest.attendance = rsvp.status
 
     for field in _PLAIN_UPDATE_FIELDS:
         if field in sent:
