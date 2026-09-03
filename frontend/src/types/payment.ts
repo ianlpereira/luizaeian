@@ -1,4 +1,12 @@
+// Métodos do checkout público. Não incluir os manuais: este tipo também
+// descreve o corpo de POST /api/payments, aberto a qualquer visitante.
 export type PaymentMethod = 'pix' | 'credit_card'
+
+/** Só o painel registra estes — dinheiro que entrou fora do Mercado Pago. */
+export type ManualMethod = 'bank_transfer' | 'camicado' | 'cash' | 'other'
+
+/** Tudo que pode aparecer na coluna Método do relatório unificado. */
+export type LedgerMethod = PaymentMethod | ManualMethod
 
 export type PaymentStatus =
   | 'pending'

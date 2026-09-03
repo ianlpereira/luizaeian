@@ -101,6 +101,21 @@ indicando que era um só.
 
 **Detalhes:** `docs/admin-gift-ledger.md`
 
+### Painel — lançamentos manuais
+
+**Concluído em:** 2026-09-03
+
+Presentes que chegam fora do site — transferência bancária, Camicado, dinheiro —
+passaram a ser registráveis pelo painel, na mesma lista e nos mesmos totais.
+
+- [x] `gift_id` opcional em `payments` e `gift_purchases`; FKs de CASCADE para SET NULL
+- [x] Métodos `bank_transfer`, `camicado`, `cash` e `other`, fora do checkout público
+- [x] `POST`/`PATCH`/`DELETE` em `/api/admin/manual-transactions`
+- [x] `ManualTransactionDrawer` + `GiftPicker`; só linha manual é editável
+- [x] Testes de lançamento, incluindo a trava contra editar linha do Mercado Pago
+
+**Detalhes:** `docs/admin-gift-ledger.md`
+
 ---
 
 ## 🔄 Em Andamento

@@ -1,5 +1,5 @@
 import type { Companion } from '@/types/rsvp'
-import type { PaymentMethod, PaymentStatus } from '@/types/payment'
+import type { LedgerMethod, ManualMethod, PaymentStatus } from '@/types/payment'
 
 /** Espelho dos schemas Pydantic em backend/app/schemas/admin.py */
 
@@ -93,17 +93,20 @@ export interface AdminGiftLedgerRow {
   key: string
   purchase_id: string | null
   payment_id: string | null
-  gift_id: string
+  /** null num lançamento manual sem presente de catálogo atrás. */
+  gift_id: string | null
   gift_title: string | null
   buyer_name: string
   message: string | null
   status: LedgerStatus
-  method: PaymentMethod | null
+  method: LedgerMethod | null
   amount: number | null
   mp_payment_id: number | null
   guest_id: string | null
   guest_full_name: string | null
   created_at: string
+  /** Lançado à mão pelo painel, e por isso editável. */
+  is_manual: boolean
 }
 
 export interface AdminGiftLedgerReport {
@@ -114,7 +117,7 @@ export interface AdminGiftLedgerReport {
 /** Linha isolada devolvida pelo PATCH de vínculo. */
 export interface AdminGiftPurchaseRow {
   id: string
-  gift_id: string
+  gift_id: string | null
   gift_title: string | null
   buyer_name: string
   message: string | null
@@ -126,6 +129,18 @@ export interface AdminGiftPurchaseRow {
 /** Único campo possível de mudar: o vínculo com um convidado. `null` desfaz. */
 export interface AdminGiftPurchaseUpdate {
   guest_id: string | null
+}
+
+/** Corpo de criação e de edição de um lançamento manual — os campos são os mesmos. */
+export interface AdminManualTransaction {
+  buyer_name: string
+  amount: number
+  method: ManualMethod
+  /** ISO 8601 completo, para a data cair no dia certo depois do fuso. */
+  created_at: string
+  gift_id: string | null
+  guest_id: string | null
+  message: string | null
 }
 
 // ── Lista de convidados ───────────────────────────────────────────────────────

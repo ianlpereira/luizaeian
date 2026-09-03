@@ -28,3 +28,11 @@ export const Tools = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
 `
+
+/** Método + a etiqueta "manual", lado a lado sem quebrar a coluna. */
+export const MethodCell = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+  white-space: nowrap;
+`

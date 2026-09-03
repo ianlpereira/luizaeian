@@ -9,11 +9,27 @@
  */
 
 import type { LedgerStatus } from '@/types/admin'
-import type { PaymentMethod } from '@/types/payment'
+import type { LedgerMethod, ManualMethod } from '@/types/payment'
 
-export const METHOD_LABEL: Record<PaymentMethod, string> = {
+/**
+ * Record exaustivo de propósito: acrescentar um método ao tipo quebra o
+ * type-check aqui até o rótulo existir, e a coluna e o CSV derivam deste mapa.
+ */
+export const METHOD_LABEL: Record<LedgerMethod, string> = {
   pix: 'Pix',
   credit_card: 'Cartão de crédito',
+  bank_transfer: 'Transferência bancária',
+  camicado: 'Camicado',
+  cash: 'Dinheiro',
+  other: 'Outro',
+}
+
+/** Só estes aparecem no formulário de lançamento manual. */
+export const MANUAL_METHOD_LABEL: Record<ManualMethod, string> = {
+  bank_transfer: METHOD_LABEL.bank_transfer,
+  camicado: METHOD_LABEL.camicado,
+  cash: METHOD_LABEL.cash,
+  other: METHOD_LABEL.other,
 }
 
 export const LEDGER_STATUS_LABEL: Record<LedgerStatus, string> = {

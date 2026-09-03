@@ -19,6 +19,7 @@ Três armadilhas do modelo de dados estão tratadas aqui:
 
 import uuid
 from decimal import Decimal
+from typing import cast
 
 from fastapi import HTTPException, status
 from sqlalchemy import Select, func, select
@@ -41,10 +42,15 @@ from app.schemas.admin import (
     GiftLedgerSummary,
     GiftSummary,
     GuestSummary,
+    LedgerStatusLiteral,
     RsvpSummary,
 )
+from app.schemas.payment import MANUAL_METHODS, LedgerMethod
 
 APPROVED = "approved"
+
+# Forma da consulta que alimenta as linhas de compra do relatório unificado.
+LedgerPurchaseStmt = Select[tuple[GiftPurchase, str | None, str | None, Payment | None]]
 
 
 def _to_float(value: Decimal | float | None) -> float:
@@ -356,6 +362,63 @@ async def get_gifts_report(db: AsyncSession) -> AdminGiftsOut:
 
 # ── Compras e pagamentos (relatório unificado) ────────────────────────────────
 
+def _ledger_purchases_stmt() -> LedgerPurchaseStmt:
+    stmt = (
+        select(GiftPurchase, Gift.title, Guest.full_name, Payment)
+        # isouter também no Gift: uma compra de presente apagado ainda é
+        # histórico financeiro e não pode sumir do relatório.
+        .join(Gift, GiftPurchase.gift_id == Gift.id, isouter=True)
+        .outerjoin(Guest, GiftPurchase.guest_id == Guest.id)
+        .outerjoin(Payment, GiftPurchase.payment_id == Payment.id)
+    )
+    # O tipo do select não acompanha os outer joins: para o SQLAlchemy as três
+    # colunas continuam não-nulas. Em tempo de execução elas vêm nulas sempre
+    # que o join não casa, e é essa a forma que o resto da função trata.
+    return cast(LedgerPurchaseStmt, stmt)
+
+
+def _ledger_purchase_row(
+    purchase: GiftPurchase,
+    gift_title: str | None,
+    guest_full_name: str | None,
+    payment: Payment | None,
+) -> AdminGiftLedgerRow:
+    return AdminGiftLedgerRow(
+        key=f"c:{purchase.id}",
+        purchase_id=purchase.id,
+        payment_id=payment.id if payment else None,
+        gift_id=purchase.gift_id,
+        gift_title=gift_title,
+        buyer_name=purchase.buyer_name,
+        message=purchase.message,
+        # As colunas são String simples no banco; quem garante os valores é o
+        # código que escreve. Mesma situação de payment_service.
+        status=cast(LedgerStatusLiteral, payment.status) if payment else "no_payment",
+        method=cast(LedgerMethod, payment.method) if payment else None,
+        amount=_to_float(payment.amount) if payment else None,
+        mp_payment_id=payment.mp_payment_id if payment else None,
+        guest_id=purchase.guest_id,
+        guest_full_name=guest_full_name,
+        created_at=purchase.created_at,
+        is_manual=payment is not None and payment.method in MANUAL_METHODS,
+    )
+
+
+async def get_gift_ledger_row(db: AsyncSession, purchase_id: uuid.UUID) -> AdminGiftLedgerRow:
+    """Uma linha só, no formato da listagem — devolvida pelos writes de lançamento."""
+    row = (
+        await db.execute(_ledger_purchases_stmt().where(GiftPurchase.id == purchase_id))
+    ).first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Lançamento não encontrado."
+        )
+
+    purchase, gift_title, guest_full_name, payment = row
+    return _ledger_purchase_row(purchase, gift_title, guest_full_name, payment)
+
+
 async def get_gift_ledger_report(db: AsyncSession) -> AdminGiftLedgerOut:
     """
     Uma linha por transação, mais recentes primeiro.
@@ -373,16 +436,7 @@ async def get_gift_ledger_report(db: AsyncSession) -> AdminGiftLedgerOut:
     pagamento aprovado aparecia nas duas, sem nada dizendo que era o mesmo
     evento.
     """
-    purchase_rows = (
-        await db.execute(
-            select(GiftPurchase, Gift.title, Guest.full_name, Payment)
-            # isouter também no Gift: uma compra de presente apagado ainda é
-            # histórico financeiro e não pode sumir do relatório.
-            .join(Gift, GiftPurchase.gift_id == Gift.id, isouter=True)
-            .outerjoin(Guest, GiftPurchase.guest_id == Guest.id)
-            .outerjoin(Payment, GiftPurchase.payment_id == Payment.id)
-        )
-    ).all()
+    purchase_rows = (await db.execute(_ledger_purchases_stmt())).all()
 
     orphan_rows = (
         await db.execute(
@@ -397,22 +451,7 @@ async def get_gift_ledger_report(db: AsyncSession) -> AdminGiftLedgerOut:
     ).all()
 
     items = [
-        AdminGiftLedgerRow(
-            key=f"c:{purchase.id}",
-            purchase_id=purchase.id,
-            payment_id=payment.id if payment else None,
-            gift_id=purchase.gift_id,
-            gift_title=gift_title,
-            buyer_name=purchase.buyer_name,
-            message=purchase.message,
-            status=payment.status if payment else "no_payment",
-            method=payment.method if payment else None,
-            amount=_to_float(payment.amount) if payment else None,
-            mp_payment_id=payment.mp_payment_id if payment else None,
-            guest_id=purchase.guest_id,
-            guest_full_name=guest_full_name,
-            created_at=purchase.created_at,
-        )
+        _ledger_purchase_row(purchase, gift_title, guest_full_name, payment)
         for purchase, gift_title, guest_full_name, payment in purchase_rows
     ] + [
         AdminGiftLedgerRow(
@@ -423,13 +462,14 @@ async def get_gift_ledger_report(db: AsyncSession) -> AdminGiftLedgerOut:
             gift_title=gift_title,
             buyer_name=payment.buyer_name,
             message=payment.message,
-            status=payment.status,
-            method=payment.method,
+            status=cast(LedgerStatusLiteral, payment.status),
+            method=cast(LedgerMethod, payment.method),
             amount=_to_float(payment.amount),
             mp_payment_id=payment.mp_payment_id,
             guest_id=None,
             guest_full_name=None,
             created_at=payment.created_at,
+            is_manual=payment.method in MANUAL_METHODS,
         )
         for payment, gift_title in orphan_rows
     ]

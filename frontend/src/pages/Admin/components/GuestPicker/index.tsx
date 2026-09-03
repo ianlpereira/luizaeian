@@ -14,16 +14,26 @@ import { normalizeText } from '@/utils/format'
 
 interface GuestPickerProps {
   guests: AdminGuestRow[]
+  // value/onChange são opcionais porque dentro de um Form.Item quem os injeta é
+  // o próprio Form, não quem escreve o JSX.
   value?: string
-  onChange: (guestId: string) => void
+  onChange?: (guestId: string) => void
   placeholder?: string
+  allowClear?: boolean
 }
 
-export function GuestPicker({ guests, value, onChange, placeholder }: GuestPickerProps) {
+export function GuestPicker({
+  guests,
+  value,
+  onChange,
+  placeholder,
+  allowClear,
+}: GuestPickerProps) {
   return (
     <Select
       style={{ minWidth: 220 }}
       showSearch
+      allowClear={allowClear}
       placeholder={placeholder ?? 'Buscar convidado'}
       value={value}
       onChange={onChange}

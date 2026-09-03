@@ -23,6 +23,7 @@ from app.core.security import (
 )
 from app.schemas.admin import (
     AdminGiftLedgerOut,
+    AdminGiftLedgerRow,
     AdminGiftPurchaseMatchesOut,
     AdminGiftPurchaseRow,
     AdminGiftPurchaseUpdateIn,
@@ -32,12 +33,18 @@ from app.schemas.admin import (
     AdminGuestsOut,
     AdminGuestUpdateIn,
     AdminLoginIn,
+    AdminManualTransactionIn,
     AdminMeOut,
     AdminRsvpMatchesOut,
     AdminRsvpsOut,
     AdminTokenOut,
 )
-from app.services import admin_report_service, gift_purchase_service, guest_service
+from app.services import (
+    admin_report_service,
+    gift_purchase_service,
+    guest_service,
+    manual_transaction_service,
+)
 
 router = APIRouter()
 
@@ -171,6 +178,48 @@ async def gift_purchase_matches(
 ) -> AdminGiftPurchaseMatchesOut:
     """Sugestões de vínculo entre compras de presente e a lista de convidados."""
     return await gift_purchase_service.get_gift_purchase_matches(db)
+
+
+# ── Lançamentos manuais ───────────────────────────────────────────────────────
+#
+# Dinheiro que entrou fora do Mercado Pago. Devolvem uma linha no formato do
+# relatório unificado, para a tabela atualizar sem refazer a listagem inteira.
+
+@router.post(
+    "/manual-transactions",
+    response_model=AdminGiftLedgerRow,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_manual_transaction(
+    payload: AdminManualTransactionIn,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGiftLedgerRow:
+    """Registra uma transferência, compra na Camicado ou entrega em dinheiro."""
+    purchase = await manual_transaction_service.create_manual_transaction(db, payload)
+    return await admin_report_service.get_gift_ledger_row(db, purchase.id)
+
+
+@router.patch("/manual-transactions/{purchase_id}", response_model=AdminGiftLedgerRow)
+async def update_manual_transaction(
+    purchase_id: uuid.UUID,
+    payload: AdminManualTransactionIn,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGiftLedgerRow:
+    """Corrige um lançamento manual. Recusa qualquer linha vinda do Mercado Pago."""
+    await manual_transaction_service.update_manual_transaction(db, purchase_id, payload)
+    return await admin_report_service.get_gift_ledger_row(db, purchase_id)
+
+
+@router.delete("/manual-transactions/{purchase_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_manual_transaction(
+    purchase_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> None:
+    """Apaga o lançamento inteiro — a compra e o pagamento que a acompanha."""
+    await manual_transaction_service.delete_manual_transaction(db, purchase_id)
 
 
 @router.patch("/gift-purchases/{purchase_id}", response_model=AdminGiftPurchaseRow)

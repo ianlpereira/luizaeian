@@ -3,13 +3,14 @@ import { Badge, Button, Table, Tag, Tooltip } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
 import type { AdminGiftLedgerRow, LedgerStatus } from '@/types/admin'
-import type { PaymentMethod } from '@/types/payment'
+import type { LedgerMethod } from '@/types/payment'
 import { formatAmountCsv, formatBRL, formatDateTime } from '@/utils/format'
 import type { CsvColumn } from '@/utils/toCsv'
 import { EMPTY, filtersFrom } from '../../guestLabels'
 import { LEDGER_STATUS_COLOR, LEDGER_STATUS_LABEL, METHOD_LABEL } from '../../paymentLabels'
 import { ExportCsvButton } from '../ExportCsvButton'
 import { GiftPurchaseMatchDrawer } from '../GiftPurchaseMatchDrawer'
+import { ManualTransactionDrawer } from '../ManualTransactionDrawer'
 import * as S from './styles'
 
 interface GiftLedgerTableProps {
@@ -52,7 +53,14 @@ const columns: ColumnsType<AdminGiftLedgerRow> = [
     dataIndex: 'method',
     filters: filtersFrom(METHOD_LABEL),
     onFilter: (value, row) => row.method === value,
-    render: (method: PaymentMethod | null) => (method ? METHOD_LABEL[method] : EMPTY),
+    // A tag sinaliza quais linhas respondem ao clique — as do Mercado Pago são
+    // só leitura.
+    render: (method: LedgerMethod | null, row) => (
+      <S.MethodCell>
+        {method ? METHOD_LABEL[method] : EMPTY}
+        {row.is_manual && <Tag>manual</Tag>}
+      </S.MethodCell>
+    ),
   },
   {
     title: 'Convidado vinculado',
@@ -101,6 +109,14 @@ const csvColumns: CsvColumn<AdminGiftLedgerRow>[] = [
  */
 export function GiftLedgerTable({ rows, loading }: GiftLedgerTableProps) {
   const [matchOpen, setMatchOpen] = useState(false)
+  const [editing, setEditing] = useState<AdminGiftLedgerRow | null>(null)
+  const [transactionOpen, setTransactionOpen] = useState(false)
+
+  // `null` abre em modo de criação, igual ao GuestsTable.
+  const openTransaction = (row: AdminGiftLedgerRow | null) => {
+    setEditing(row)
+    setTransactionOpen(true)
+  }
 
   // Só compras podem ser vinculadas a um convidado — um pagamento que nunca
   // virou compra (pendente, recusado) não tem o que conciliar.
@@ -118,6 +134,9 @@ export function GiftLedgerTable({ rows, loading }: GiftLedgerTableProps) {
             <Button onClick={() => setMatchOpen(true)}>Conciliar convidados</Button>
           </Badge>
           <ExportCsvButton filePrefix="compras-pagamentos" columns={csvColumns} rows={rows} />
+          <Button type="primary" onClick={() => openTransaction(null)}>
+            Adicionar lançamento
+          </Button>
         </S.Tools>
       </S.Toolbar>
 
@@ -129,9 +148,19 @@ export function GiftLedgerTable({ rows, loading }: GiftLedgerTableProps) {
         loading={loading}
         scroll={{ x: 'max-content' }}
         pagination={{ pageSize: 20, showSizeChanger: true }}
+        onRow={(row) => ({
+          onClick: row.is_manual ? () => openTransaction(row) : undefined,
+          style: row.is_manual ? { cursor: 'pointer' } : undefined,
+        })}
       />
 
       <GiftPurchaseMatchDrawer open={matchOpen} onClose={() => setMatchOpen(false)} />
+
+      <ManualTransactionDrawer
+        open={transactionOpen}
+        row={editing}
+        onClose={() => setTransactionOpen(false)}
+      />
     </S.Wrapper>
   )
 }
