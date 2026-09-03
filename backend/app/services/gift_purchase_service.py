@@ -67,6 +67,10 @@ async def get_gift_purchase_matches(db: AsyncSession) -> AdminGiftPurchaseMatche
     for guest in guests:
         by_name.setdefault(normalize_name(guest.full_name), []).append(guest)
 
+    # Vínculo manual ou criado na hora não garante que o nome do convidado bata
+    # com `buyer_name` — sem isso, a tela mostraria "vinculado" sem dizer a quem.
+    guests_by_id = {g.id: g for g in guests}
+
     group_labels = {g.group_index: g.full_name for g in guests if g.is_group_head}
 
     items: list[AdminGiftPurchaseMatchEntry] = []
@@ -80,10 +84,14 @@ async def get_gift_purchase_matches(db: AsyncSession) -> AdminGiftPurchaseMatche
 
     for purchase, gift_title in purchase_rows:
         matches = by_name.get(normalize_name(purchase.buyer_name), [])
+        candidates = list(matches)
 
         if purchase.guest_id is not None:
             state = "linked"
             summary.linked += 1
+            linked_guest = guests_by_id.get(purchase.guest_id)
+            if linked_guest is not None and linked_guest not in candidates:
+                candidates.append(linked_guest)
         elif len(matches) == 1:
             state = "unique_match"
             summary.unique_match += 1
@@ -110,7 +118,7 @@ async def get_gift_purchase_matches(db: AsyncSession) -> AdminGiftPurchaseMatche
                         full_name=g.full_name,
                         group_label=group_labels.get(g.group_index, g.full_name),
                     )
-                    for g in matches
+                    for g in candidates
                 ],
             )
         )

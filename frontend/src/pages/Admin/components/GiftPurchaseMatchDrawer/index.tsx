@@ -228,14 +228,20 @@ export function GiftPurchaseMatchDrawer({ open, onClose }: GiftPurchaseMatchDraw
             children: groups.linked.length === 0 ? (
               <S.Empty>Nenhum vínculo criado ainda.</S.Empty>
             ) : (
-              groups.linked.map((entry) => (
-                <S.Entry key={entry.purchase_id}>
-                  <EntryHeader entry={entry} />
-                  <Button size="small" onClick={() => handleUnlink(entry)}>
-                    Desfazer
-                  </Button>
-                </S.Entry>
-              ))
+              groups.linked.map((entry) => {
+                const linkedGuest = entry.candidates.find(
+                  (candidate) => candidate.guest_id === entry.linked_guest_id,
+                )
+                return (
+                  <S.Entry key={entry.purchase_id}>
+                    <EntryHeader entry={entry} />
+                    {linkedGuest && <div>{linkedGuest.full_name}</div>}
+                    <Button size="small" onClick={() => handleUnlink(entry)}>
+                      Desfazer
+                    </Button>
+                  </S.Entry>
+                )
+              })
             ),
           },
         ]}

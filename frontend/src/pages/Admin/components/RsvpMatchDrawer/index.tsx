@@ -269,14 +269,22 @@ export function RsvpMatchDrawer({ open, onClose, rsvpId }: RsvpMatchDrawerProps)
             children: groups.linked.length === 0 ? (
               <S.Empty>Nenhum vínculo criado ainda.</S.Empty>
             ) : (
-              groups.linked.map((entry) => (
-                <S.Entry key={entryKey(entry)}>
-                  <EntryHeader entry={entry} />
-                  <Button size="small" onClick={() => handleUnlink(entry)}>
-                    Desfazer
-                  </Button>
-                </S.Entry>
-              ))
+              groups.linked.map((entry) => {
+                const linkedGuest = entry.candidates.find(
+                  (candidate) => candidate.guest_id === entry.linked_guest_id,
+                )
+                return (
+                  <S.Entry key={entryKey(entry)}>
+                    <EntryHeader entry={entry} />
+                    {/* O nome digitado no RSVP nem sempre bate com o do convidado —
+                        vínculo manual ou criado na hora costuma divergir. */}
+                    {linkedGuest && <div>{linkedGuest.full_name}</div>}
+                    <Button size="small" onClick={() => handleUnlink(entry)}>
+                      Desfazer
+                    </Button>
+                  </S.Entry>
+                )
+              })
             ),
           },
         ]}

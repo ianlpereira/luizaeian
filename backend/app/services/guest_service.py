@@ -231,6 +231,18 @@ async def get_rsvp_matches(db: AsyncSession) -> AdminRsvpMatchesOut:
     for guest in guests:
         by_name.setdefault(normalize_name(guest.full_name), []).append(guest)
 
+    # (rsvp_id, role) -> convidado já vinculado, independente do nome bater.
+    # Precisa existir à parte de `by_name`: o painel também vincula pela busca
+    # manual ou cria um convidado novo (RsvpMatchDrawer), e nesses casos o nome
+    # gravado no convidado costuma ser bem diferente do que a pessoa digitou no
+    # RSVP — sem este mapa, o vínculo fica correto no banco mas a tela nunca
+    # tira a entrada de "Fora da lista".
+    linked_by_role: dict[tuple[uuid.UUID, str], Guest] = {
+        (g.rsvp_id, g.rsvp_role): g
+        for g in guests
+        if g.rsvp_id is not None and g.rsvp_role is not None
+    }
+
     # Rótulo do grupo, para o candidato aparecer como "Esposa (grupo Sergio Tavares)".
     group_labels = {g.group_index: g.full_name for g in guests if g.is_group_head}
 
@@ -251,11 +263,16 @@ async def get_rsvp_matches(db: AsyncSession) -> AdminRsvpMatchesOut:
         for role, raw_name in entries:
             summary.entries_total += 1
             matches = by_name.get(normalize_name(raw_name), [])
+            already = linked_by_role.get((rsvp.id, role))
 
-            already = next(
-                (g for g in matches if g.rsvp_id == rsvp.id and g.rsvp_role == role),
-                None,
-            )
+            # O vínculo pode ter sido feito por nome diferente do digitado no
+            # RSVP (busca manual, ou convidado criado na hora) — garante que a
+            # tela sempre veja quem está vinculado, mesmo fora da lista de
+            # candidatos por nome.
+            candidates = list(matches)
+            if already is not None and already not in candidates:
+                candidates.append(already)
+
             state: MatchState
             if already is not None:
                 state = "linked"
@@ -291,7 +308,7 @@ async def get_rsvp_matches(db: AsyncSession) -> AdminRsvpMatchesOut:
                                 g.rsvp_id is not None and g.rsvp_id != rsvp.id
                             ),
                         )
-                        for g in matches
+                        for g in candidates
                     ],
                 )
             )
