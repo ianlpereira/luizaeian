@@ -35,5 +35,15 @@ class GiftPurchase(UUIDMixin, TimestampMixin, Base):
     )
     buyer_name: Mapped[str] = mapped_column(String(100), nullable=False)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Vínculo manual/sugerido com quem está na lista de convidados — mesma ideia
+    # de guest.rsvp_id, mas na direção oposta (many-to-one: um convidado pode
+    # dar vários presentes). SET NULL porque remover o convidado não deve
+    # apagar o histórico financeiro da compra.
+    guest_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("guest.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     gift: Mapped["Gift"] = relationship("Gift", back_populates="purchases")

@@ -28,6 +28,8 @@ from app.models.guest import Guest
 from app.models.payment import Payment
 from app.models.rsvp import Rsvp
 from app.schemas.admin import (
+    AdminGiftPurchaseRow,
+    AdminGiftPurchasesOut,
     AdminGiftRow,
     AdminGiftsOut,
     AdminGuestRow,
@@ -36,6 +38,7 @@ from app.schemas.admin import (
     AdminPaymentsOut,
     AdminRsvpRow,
     AdminRsvpsOut,
+    GiftPurchaseSummary,
     GiftSummary,
     GuestSummary,
     PaymentSummary,
@@ -407,3 +410,64 @@ async def get_payments_report(db: AsyncSession) -> AdminPaymentsOut:
         total_count=total_count,
     )
     return AdminPaymentsOut(summary=summary, items=items)
+
+
+# ── Compras de presentes ───────────────────────────────────────────────────────
+
+def _gift_purchase_row(
+    purchase: GiftPurchase, gift_title: str | None, guest_full_name: str | None
+) -> AdminGiftPurchaseRow:
+    return AdminGiftPurchaseRow(
+        id=purchase.id,
+        gift_id=purchase.gift_id,
+        gift_title=gift_title,
+        buyer_name=purchase.buyer_name,
+        message=purchase.message,
+        guest_id=purchase.guest_id,
+        guest_full_name=guest_full_name,
+        created_at=purchase.created_at,
+    )
+
+
+async def get_gift_purchases_report(db: AsyncSession) -> AdminGiftPurchasesOut:
+    """Todas as compras, mais recentes primeiro, com o presente e o convidado vinculado."""
+    result = await db.execute(
+        select(GiftPurchase, Gift.title, Guest.full_name)
+        .join(Gift, GiftPurchase.gift_id == Gift.id)
+        .outerjoin(Guest, GiftPurchase.guest_id == Guest.id)
+        .order_by(GiftPurchase.created_at.desc())
+    )
+    rows = result.all()
+
+    items = [
+        _gift_purchase_row(purchase, gift_title, guest_full_name)
+        for purchase, gift_title, guest_full_name in rows
+    ]
+    linked = sum(1 for purchase, *_ in rows if purchase.guest_id is not None)
+
+    summary = GiftPurchaseSummary(
+        total=len(items),
+        linked=linked,
+        unlinked=len(items) - linked,
+    )
+    return AdminGiftPurchasesOut(summary=summary, items=items)
+
+
+async def get_gift_purchase_row(db: AsyncSession, purchase_id: uuid.UUID) -> AdminGiftPurchaseRow:
+    """Uma compra só, no mesmo formato da listagem — devolvida pelo PATCH de vínculo."""
+    row = (
+        await db.execute(
+            select(GiftPurchase, Gift.title, Guest.full_name)
+            .join(Gift, GiftPurchase.gift_id == Gift.id)
+            .outerjoin(Guest, GiftPurchase.guest_id == Guest.id)
+            .where(GiftPurchase.id == purchase_id)
+        )
+    ).first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Compra não encontrada."
+        )
+
+    purchase, gift_title, guest_full_name = row
+    return _gift_purchase_row(purchase, gift_title, guest_full_name)

@@ -121,6 +121,36 @@ class AdminPaymentsOut(BaseModel):
     items: list[AdminPaymentRow]
 
 
+# ── Relatório de compras de presentes ─────────────────────────────────────────
+
+class GiftPurchaseSummary(BaseModel):
+    total: int
+    linked: int
+    unlinked: int
+
+
+class AdminGiftPurchaseRow(BaseModel):
+    id: uuid.UUID
+    gift_id: uuid.UUID
+    gift_title: str | None
+    buyer_name: str
+    message: str | None
+    guest_id: uuid.UUID | None
+    guest_full_name: str | None
+    created_at: datetime
+
+
+class AdminGiftPurchasesOut(BaseModel):
+    summary: GiftPurchaseSummary
+    items: list[AdminGiftPurchaseRow]
+
+
+class AdminGiftPurchaseUpdateIn(BaseModel):
+    """Único campo possível de mudar aqui: o vínculo com um convidado. `null` desfaz."""
+
+    guest_id: uuid.UUID | None = None
+
+
 # ── Lista de convidados ───────────────────────────────────────────────────────
 #
 # Origem diferente dos relatórios acima: não vem do site, e sim da planilha dos
@@ -281,3 +311,40 @@ class RsvpMatchSummary(BaseModel):
 class AdminRsvpMatchesOut(BaseModel):
     summary: RsvpMatchSummary
     items: list[AdminRsvpMatchEntry]
+
+
+# ── Casamento entre compras de presentes e convidados ─────────────────────────
+#
+# Mesmo formato de estado (MatchState) e mesma postura do RSVP: sugere, nunca
+# vincula sozinho. Aqui não há titular/acompanhante — uma entrada por compra.
+
+class GiftPurchaseMatchCandidate(BaseModel):
+    guest_id: uuid.UUID
+    full_name: str
+    group_label: str
+
+
+class AdminGiftPurchaseMatchEntry(BaseModel):
+    purchase_id: uuid.UUID
+    gift_id: uuid.UUID
+    gift_title: str | None
+    buyer_name: str
+    message: str | None
+    created_at: datetime
+    state: MatchState
+    # Preenchido quando state == 'linked'.
+    linked_guest_id: uuid.UUID | None
+    candidates: list[GiftPurchaseMatchCandidate]
+
+
+class GiftPurchaseMatchSummary(BaseModel):
+    purchases_total: int
+    linked: int
+    unique_match: int
+    ambiguous: int
+    no_match: int
+
+
+class AdminGiftPurchaseMatchesOut(BaseModel):
+    summary: GiftPurchaseMatchSummary
+    items: list[AdminGiftPurchaseMatchEntry]

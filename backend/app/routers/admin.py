@@ -22,6 +22,10 @@ from app.core.security import (
     verify_admin_credentials,
 )
 from app.schemas.admin import (
+    AdminGiftPurchaseMatchesOut,
+    AdminGiftPurchaseRow,
+    AdminGiftPurchasesOut,
+    AdminGiftPurchaseUpdateIn,
     AdminGiftsOut,
     AdminGuestCreateIn,
     AdminGuestRow,
@@ -34,7 +38,7 @@ from app.schemas.admin import (
     AdminRsvpsOut,
     AdminTokenOut,
 )
-from app.services import admin_report_service, guest_service
+from app.services import admin_report_service, gift_purchase_service, guest_service
 
 router = APIRouter()
 
@@ -154,3 +158,35 @@ async def payments_report(
 ) -> AdminPaymentsOut:
     """Relatório de pagamentos do Mercado Pago, com totais por status."""
     return await admin_report_service.get_payments_report(db)
+
+
+@router.get("/gift-purchases", response_model=AdminGiftPurchasesOut)
+async def gift_purchases_report(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGiftPurchasesOut:
+    """Compras de presente, com o convidado vinculado quando já resolvido."""
+    return await admin_report_service.get_gift_purchases_report(db)
+
+
+# Precisa vir antes de /gift-purchases/{purchase_id}, pelo mesmo motivo de
+# /guests/rsvp-matches: "matches" seria lido como UUID e devolveria 422.
+@router.get("/gift-purchases/matches", response_model=AdminGiftPurchaseMatchesOut)
+async def gift_purchase_matches(
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGiftPurchaseMatchesOut:
+    """Sugestões de vínculo entre compras de presente e a lista de convidados."""
+    return await gift_purchase_service.get_gift_purchase_matches(db)
+
+
+@router.patch("/gift-purchases/{purchase_id}", response_model=AdminGiftPurchaseRow)
+async def update_gift_purchase(
+    purchase_id: uuid.UUID,
+    payload: AdminGiftPurchaseUpdateIn,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGiftPurchaseRow:
+    """Vincula ou desvincula uma compra de presente a um convidado."""
+    await gift_purchase_service.update_gift_purchase(db, purchase_id, payload)
+    return await admin_report_service.get_gift_purchase_row(db, purchase_id)

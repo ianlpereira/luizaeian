@@ -98,6 +98,35 @@ export interface AdminPaymentsReport {
   items: AdminPaymentRow[]
 }
 
+// ── Compras de presentes ─────────────────────────────────────────────────────
+
+export interface GiftPurchaseSummary {
+  total: number
+  linked: number
+  unlinked: number
+}
+
+export interface AdminGiftPurchaseRow {
+  id: string
+  gift_id: string
+  gift_title: string | null
+  buyer_name: string
+  message: string | null
+  guest_id: string | null
+  guest_full_name: string | null
+  created_at: string
+}
+
+export interface AdminGiftPurchasesReport {
+  summary: GiftPurchaseSummary
+  items: AdminGiftPurchaseRow[]
+}
+
+/** Único campo possível de mudar: o vínculo com um convidado. `null` desfaz. */
+export interface AdminGiftPurchaseUpdate {
+  guest_id: string | null
+}
+
 // ── Lista de convidados ───────────────────────────────────────────────────────
 
 export type InviteType = 'physical' | 'digital'
@@ -216,4 +245,37 @@ export interface RsvpMatchSummary {
 export interface AdminRsvpMatchesReport {
   summary: RsvpMatchSummary
   items: AdminRsvpMatchEntry[]
+}
+
+// ── Casamento entre compras de presentes e convidados ──────────────────────────
+
+export interface GiftPurchaseMatchCandidate {
+  guest_id: string
+  full_name: string
+  group_label: string
+}
+
+export interface AdminGiftPurchaseMatchEntry {
+  purchase_id: string
+  gift_id: string
+  gift_title: string | null
+  buyer_name: string
+  message: string | null
+  created_at: string
+  state: MatchState
+  linked_guest_id: string | null
+  candidates: GiftPurchaseMatchCandidate[]
+}
+
+export interface GiftPurchaseMatchSummary {
+  purchases_total: number
+  linked: number
+  unique_match: number
+  ambiguous: number
+  no_match: number
+}
+
+export interface AdminGiftPurchaseMatchesReport {
+  summary: GiftPurchaseMatchSummary
+  items: AdminGiftPurchaseMatchEntry[]
 }

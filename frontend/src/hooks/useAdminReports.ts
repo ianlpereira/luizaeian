@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  getAdminGiftPurchaseMatches,
+  getAdminGiftPurchases,
   getAdminGifts,
   getAdminGuests,
   getAdminPayments,
@@ -75,6 +77,29 @@ export function useAdminPayments() {
   return useQuery({
     queryKey: ['admin', 'payments'],
     queryFn: getAdminPayments,
+    enabled: isAuthenticated,
+    ...commonOptions,
+  })
+}
+
+export function useAdminGiftPurchases() {
+  const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated)
+
+  return useQuery({
+    queryKey: ['admin', 'gift-purchases'],
+    queryFn: getAdminGiftPurchases,
+    enabled: isAuthenticated,
+    ...commonOptions,
+  })
+}
+
+/** Sugestões de vínculo compras × convidados, usadas no drawer de conciliação. */
+export function useAdminGiftPurchaseMatches() {
+  const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated)
+
+  return useQuery({
+    queryKey: ['admin', 'gift-purchases', 'matches'],
+    queryFn: getAdminGiftPurchaseMatches,
     enabled: isAuthenticated,
     ...commonOptions,
   })
