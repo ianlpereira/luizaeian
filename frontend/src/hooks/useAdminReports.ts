@@ -1,11 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  getAdminGiftLedger,
   getAdminGiftPurchaseMatches,
-  getAdminGiftPurchases,
   getAdminGifts,
   getAdminGuests,
-  getAdminPayments,
   getAdminRsvpMatches,
   getAdminRsvps,
 } from '@/lib/adminApi'
@@ -71,23 +70,13 @@ export function useAdminGifts() {
   })
 }
 
-export function useAdminPayments() {
+/** Compras e pagamentos numa lista só — uma linha por transação. */
+export function useAdminGiftLedger() {
   const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated)
 
   return useQuery({
-    queryKey: ['admin', 'payments'],
-    queryFn: getAdminPayments,
-    enabled: isAuthenticated,
-    ...commonOptions,
-  })
-}
-
-export function useAdminGiftPurchases() {
-  const isAuthenticated = useAdminAuthStore((state) => state.isAuthenticated)
-
-  return useQuery({
-    queryKey: ['admin', 'gift-purchases'],
-    queryFn: getAdminGiftPurchases,
+    queryKey: ['admin', 'gift-ledger'],
+    queryFn: getAdminGiftLedger,
     enabled: isAuthenticated,
     ...commonOptions,
   })
@@ -105,7 +94,7 @@ export function useAdminGiftPurchaseMatches() {
   })
 }
 
-/** Botão "Atualizar": refaz os quatro relatórios de uma vez. */
+/** Botão "Atualizar": refaz todos os relatórios de uma vez. */
 export function useRefreshAdminReports() {
   const queryClient = useQueryClient()
 

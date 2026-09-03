@@ -189,7 +189,7 @@ async def _mock_card_payment(
     db.add(payment)
     await db.flush()
     # Marca presente como comprado imediatamente (mock aprova na hora)
-    await _fulfill_gift(gift, buyer_name, message, db)
+    await _fulfill_gift(gift, payment, db)
     await db.refresh(payment)
 
     logger.info("MOCK Cartão aprovado: payment_id=%s mp_id=%s", payment.id, fake_mp_id)
@@ -396,12 +396,15 @@ async def _create_card_payment(
         message=message,
     )
     db.add(payment)
+    # Flush antes do _fulfill_gift: payment.id só é gerado no flush (default
+    # Python-side do UUIDMixin), e a compra precisa dele para o payment_id.
+    await db.flush()
 
     # Se o cartão foi aprovado instantaneamente (binary_mode=True → aprovação imediata)
     if internal_status == PaymentStatus.APPROVED:
-        await _fulfill_gift(gift, buyer_name, message, db)
+        await _fulfill_gift(gift, payment, db)
+        await db.flush()
 
-    await db.flush()
     await db.refresh(payment)
 
     return PaymentCreateOut(
@@ -450,7 +453,7 @@ async def process_webhook(mp_payment_id: int, db: AsyncSession) -> None:
     if internal_status == PaymentStatus.APPROVED and old_status != PaymentStatus.APPROVED:
         gift = await db.get(Gift, payment.gift_id)
         if gift:
-            await _fulfill_gift(gift, payment.buyer_name, payment.message, db)
+            await _fulfill_gift(gift, payment, db)
             logger.info(
                 "Webhook: presente %s marcado como comprado via pagamento %s",
                 payment.gift_id,
@@ -471,9 +474,9 @@ async def get_payment_status(payment_id: uuid.UUID, db: AsyncSession) -> Payment
     webhook pode ter perdido ou atrasado.
 
     Reconciliação automática: se o pagamento está aprovado mas ainda não gerou
-    um gift_purchases correspondente, executa _fulfill_gift. A checagem é
-    escopada ao buyer_name + message deste pagamento (e não apenas ao gift_id),
-    já que um mesmo presente agora pode ter múltiplas compras.
+    um gift_purchases correspondente, executa _fulfill_gift. A checagem é feita
+    pela FK gift_purchases.payment_id, então é exata — um mesmo presente pode ter
+    várias compras, inclusive do mesmo comprador com a mesma mensagem.
     """
     payment = await db.get(Payment, payment_id)
     if payment is None:
@@ -503,16 +506,13 @@ async def get_payment_status(payment_id: uuid.UUID, db: AsyncSession) -> Payment
     # Reconciliação: approved sem gift_purchase correspondente → fulfilla agora
     if payment.status == PaymentStatus.APPROVED:
         existing_purchase = await db.scalar(
-            select(GiftPurchase).where(
-                GiftPurchase.gift_id == payment.gift_id,
-                GiftPurchase.buyer_name == payment.buyer_name,
-                GiftPurchase.message == payment.message,
-            )
+            select(GiftPurchase).where(GiftPurchase.payment_id == payment.id)
         )
         if existing_purchase is None:
             gift = await db.get(Gift, payment.gift_id)
             if gift:
-                await _fulfill_gift(gift, payment.buyer_name, payment.message, db)
+                await _fulfill_gift(gift, payment, db)
+                await db.flush()
                 logger.info(
                     "Reconciliação: presente %s fulfillado via polling (payment %s)",
                     payment.gift_id,
@@ -530,18 +530,21 @@ async def get_payment_status(payment_id: uuid.UUID, db: AsyncSession) -> Payment
 
 async def _fulfill_gift(
     gift: Gift,
-    buyer_name: str,
-    message: str | None,
+    payment: Payment,
     db: AsyncSession,
 ) -> None:
     """
     Cria o registro em gift_purchases. Presentes não têm limite de compra,
     então este registro não afeta a disponibilidade do presente.
     Chamado tanto pelo webhook (Pix) quanto pela resposta direta (Cartão aprovado).
+
+    `payment` precisa já ter passado por flush: payment.id é gerado no flush e a
+    compra guarda essa FK.
     """
     purchase = GiftPurchase(
         gift_id=gift.id,
-        buyer_name=buyer_name,
-        message=message,
+        buyer_name=payment.buyer_name,
+        message=payment.message,
+        payment_id=payment.id,
     )
     db.add(purchase)

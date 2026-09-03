@@ -4,6 +4,14 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 
 export const formatBRL = (value: number) => brl.format(value)
 
+/**
+ * Valor para CSV: vírgula decimal e sem símbolo de moeda.
+ *
+ * O Excel em pt-BR só reconhece a célula como número nesse formato — com o
+ * "R$" do `formatBRL` ela vira texto e não soma.
+ */
+export const formatAmountCsv = (value: number) => value.toFixed(2).replace('.', ',')
+
 export const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString('pt-BR', {
     day: '2-digit',

@@ -2,7 +2,7 @@ import { Alert, Table, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
 import type { AdminGiftRow } from '@/types/admin'
-import { formatBRL } from '@/utils/format'
+import { formatAmountCsv, formatBRL } from '@/utils/format'
 import type { CsvColumn } from '@/utils/toCsv'
 import { ExportCsvButton } from '../ExportCsvButton'
 import * as S from './styles'
@@ -67,14 +67,11 @@ function buildColumns(rows: AdminGiftRow[]): ColumnsType<AdminGiftRow> {
 const csvColumns: CsvColumn<AdminGiftRow>[] = [
   { header: 'Presente', value: (row) => row.title },
   { header: 'Categoria', value: (row) => row.category },
-  { header: 'Preço', value: (row) => row.price.toFixed(2).replace('.', ',') },
+  { header: 'Preço', value: (row) => formatAmountCsv(row.price) },
   { header: 'Visível', value: (row) => (row.hidden ? 'Oculto' : 'Visível') },
   { header: 'Registros de presente', value: (row) => row.purchase_records },
   { header: 'Pagamentos aprovados', value: (row) => row.approved_payments },
-  {
-    header: 'Valor aprovado',
-    value: (row) => row.approved_amount.toFixed(2).replace('.', ','),
-  },
+  { header: 'Valor aprovado', value: (row) => formatAmountCsv(row.approved_amount) },
 ]
 
 export function GiftsTable({ rows, loading }: GiftsTableProps) {

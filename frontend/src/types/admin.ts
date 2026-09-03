@@ -69,43 +69,49 @@ export interface AdminGiftsReport {
   items: AdminGiftRow[]
 }
 
-// ── Pagamentos ────────────────────────────────────────────────────────────────
+// ── Compras e pagamentos ─────────────────────────────────────────────────────
 
-export interface PaymentSummary {
+/** Os status do Mercado Pago mais a compra registrada sem pagamento por trás. */
+export type LedgerStatus = PaymentStatus | 'no_payment'
+
+export interface GiftLedgerSummary {
+  /** Financeiro: só de `payments`. Linhas 'no_payment' não entram aqui. */
   approved_amount: number
   approved_count: number
   pending_count: number
   rejected_count: number
   other_count: number
-  total_count: number
-}
-
-export interface AdminPaymentRow {
-  id: string
-  gift_id: string
-  gift_title: string | null
-  mp_payment_id: number | null
-  method: PaymentMethod
-  status: PaymentStatus
-  amount: number
-  buyer_name: string
-  message: string | null
-  created_at: string
-}
-
-export interface AdminPaymentsReport {
-  summary: PaymentSummary
-  items: AdminPaymentRow[]
-}
-
-// ── Compras de presentes ─────────────────────────────────────────────────────
-
-export interface GiftPurchaseSummary {
-  total: number
+  total_payments: number
+  /** Vínculo com a lista de convidados: só existe para linhas com purchase_id. */
+  purchases_total: number
   linked: number
   unlinked: number
 }
 
+export interface AdminGiftLedgerRow {
+  /** rowKey da tabela — 'c:<uuid>' para compra, 'p:<uuid>' para pagamento órfão. */
+  key: string
+  purchase_id: string | null
+  payment_id: string | null
+  gift_id: string
+  gift_title: string | null
+  buyer_name: string
+  message: string | null
+  status: LedgerStatus
+  method: PaymentMethod | null
+  amount: number | null
+  mp_payment_id: number | null
+  guest_id: string | null
+  guest_full_name: string | null
+  created_at: string
+}
+
+export interface AdminGiftLedgerReport {
+  summary: GiftLedgerSummary
+  items: AdminGiftLedgerRow[]
+}
+
+/** Linha isolada devolvida pelo PATCH de vínculo. */
 export interface AdminGiftPurchaseRow {
   id: string
   gift_id: string
@@ -115,11 +121,6 @@ export interface AdminGiftPurchaseRow {
   guest_id: string | null
   guest_full_name: string | null
   created_at: string
-}
-
-export interface AdminGiftPurchasesReport {
-  summary: GiftPurchaseSummary
-  items: AdminGiftPurchaseRow[]
 }
 
 /** Único campo possível de mudar: o vínculo com um convidado. `null` desfaz. */

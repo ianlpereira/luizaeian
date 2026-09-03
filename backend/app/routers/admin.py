@@ -22,9 +22,9 @@ from app.core.security import (
     verify_admin_credentials,
 )
 from app.schemas.admin import (
+    AdminGiftLedgerOut,
     AdminGiftPurchaseMatchesOut,
     AdminGiftPurchaseRow,
-    AdminGiftPurchasesOut,
     AdminGiftPurchaseUpdateIn,
     AdminGiftsOut,
     AdminGuestCreateIn,
@@ -33,7 +33,6 @@ from app.schemas.admin import (
     AdminGuestUpdateIn,
     AdminLoginIn,
     AdminMeOut,
-    AdminPaymentsOut,
     AdminRsvpMatchesOut,
     AdminRsvpsOut,
     AdminTokenOut,
@@ -151,22 +150,16 @@ async def gifts_report(
     return await admin_report_service.get_gifts_report(db)
 
 
-@router.get("/payments", response_model=AdminPaymentsOut)
-async def payments_report(
+@router.get("/gift-ledger", response_model=AdminGiftLedgerOut)
+async def gift_ledger_report(
     db: AsyncSession = Depends(get_db),
     _: str = Depends(get_current_admin),
-) -> AdminPaymentsOut:
-    """Relatório de pagamentos do Mercado Pago, com totais por status."""
-    return await admin_report_service.get_payments_report(db)
-
-
-@router.get("/gift-purchases", response_model=AdminGiftPurchasesOut)
-async def gift_purchases_report(
-    db: AsyncSession = Depends(get_db),
-    _: str = Depends(get_current_admin),
-) -> AdminGiftPurchasesOut:
-    """Compras de presente, com o convidado vinculado quando já resolvido."""
-    return await admin_report_service.get_gift_purchases_report(db)
+) -> AdminGiftLedgerOut:
+    """
+    Compras e pagamentos numa lista só: uma linha por transação, com valor,
+    status do Mercado Pago e o convidado vinculado quando existe.
+    """
+    return await admin_report_service.get_gift_ledger_report(db)
 
 
 # Precisa vir antes de /gift-purchases/{purchase_id}, pelo mesmo motivo de

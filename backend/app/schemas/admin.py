@@ -91,43 +91,58 @@ class AdminGiftsOut(BaseModel):
     items: list[AdminGiftRow]
 
 
-# ── Relatório de pagamentos ───────────────────────────────────────────────────
+# ── Relatório unificado de compras e pagamentos ───────────────────────────────
 
-class PaymentSummary(BaseModel):
-    # Única fonte de verdade financeira: soma de payments com status 'approved'.
+# Os status do Mercado Pago mais "no_payment", que não é do MP: marca a compra
+# registrada pelo endpoint público POST /api/gifts/purchase, sem dinheiro atrás.
+LedgerStatusLiteral = PaymentStatusLiteral | Literal["no_payment"]
+
+
+class GiftLedgerSummary(BaseModel):
+    # Financeiro: sai só de `payments`. Linhas "no_payment" não entram em
+    # nenhum destes números.
     approved_amount: float
     approved_count: int
     pending_count: int
     rejected_count: int
     other_count: int
-    total_count: int
-
-
-class AdminPaymentRow(BaseModel):
-    id: uuid.UUID
-    gift_id: uuid.UUID
-    gift_title: str | None
-    mp_payment_id: int | None
-    method: PaymentMethod
-    status: PaymentStatusLiteral
-    amount: float
-    buyer_name: str
-    message: str | None
-    created_at: datetime
-
-
-class AdminPaymentsOut(BaseModel):
-    summary: PaymentSummary
-    items: list[AdminPaymentRow]
-
-
-# ── Relatório de compras de presentes ─────────────────────────────────────────
-
-class GiftPurchaseSummary(BaseModel):
-    total: int
+    total_payments: int
+    # Vínculo com a lista de convidados: só existe para linhas com purchase_id.
+    purchases_total: int
     linked: int
     unlinked: int
 
+
+class AdminGiftLedgerRow(BaseModel):
+    """
+    Uma transação. Vem de uma compra (com ou sem pagamento vinculado) ou de um
+    pagamento que nunca gerou compra — pendente, recusado, expirado.
+    """
+
+    # rowKey da tabela: "c:<uuid>" para compra, "p:<uuid>" para pagamento órfão.
+    # Não dá para usar `id` porque as linhas vêm de duas tabelas diferentes.
+    key: str
+    purchase_id: uuid.UUID | None
+    payment_id: uuid.UUID | None
+    gift_id: uuid.UUID
+    gift_title: str | None
+    buyer_name: str
+    message: str | None
+    status: LedgerStatusLiteral
+    method: PaymentMethod | None
+    amount: float | None
+    mp_payment_id: int | None
+    guest_id: uuid.UUID | None
+    guest_full_name: str | None
+    created_at: datetime
+
+
+class AdminGiftLedgerOut(BaseModel):
+    summary: GiftLedgerSummary
+    items: list[AdminGiftLedgerRow]
+
+
+# ── Compra de presente (linha isolada, devolvida pelo PATCH de vínculo) ───────
 
 class AdminGiftPurchaseRow(BaseModel):
     id: uuid.UUID
@@ -138,11 +153,6 @@ class AdminGiftPurchaseRow(BaseModel):
     guest_id: uuid.UUID | None
     guest_full_name: str | None
     created_at: datetime
-
-
-class AdminGiftPurchasesOut(BaseModel):
-    summary: GiftPurchaseSummary
-    items: list[AdminGiftPurchaseRow]
 
 
 class AdminGiftPurchaseUpdateIn(BaseModel):

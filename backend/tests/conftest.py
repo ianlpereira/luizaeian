@@ -4,15 +4,21 @@ Fixtures compartilhadas dos testes.
 Os testes de autenticação não precisam de banco: `get_db` abre a sessão com
 `async with AsyncSessionLocal()`, que só conecta na primeira query — e nenhuma
 query acontece quando a requisição é barrada em 401/429/503.
+
+A fixture `db` existe para os que precisam. Ela é lazy: só conecta se o teste
+pedir, então continua barato rodar a suíte sem PostgreSQL.
 """
 
 from collections.abc import AsyncIterator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from app.core import security
 from app.core.config import settings
+from app.core.database import _async_db_url
 from app.main import app
 
 TEST_USERNAME = "admin"
@@ -53,3 +59,26 @@ async def auth_headers(client: AsyncClient, admin_env: None) -> dict[str, str]:
     )
     assert response.status_code == 200
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+@pytest.fixture
+async def db() -> AsyncIterator[AsyncSession]:
+    """
+    Sessão presa a uma transação externa, revertida ao fim do teste.
+
+    Engine própria com NullPool: o pytest-asyncio cria um event loop por teste e
+    o engine global de app.core.database guardaria conexões de um loop já
+    fechado, quebrando o segundo teste em diante com "Event loop is closed".
+    """
+    test_engine = create_async_engine(_async_db_url(settings.DATABASE_URL), poolclass=NullPool)
+    try:
+        async with test_engine.connect() as connection:
+            transaction = await connection.begin()
+            session = AsyncSession(bind=connection, expire_on_commit=False)
+            try:
+                yield session
+            finally:
+                await session.close()
+                await transaction.rollback()
+    finally:
+        await test_engine.dispose()

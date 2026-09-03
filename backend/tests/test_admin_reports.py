@@ -13,17 +13,13 @@ nada é gravado de verdade.
 
 import os
 import uuid
-from collections.abc import AsyncIterator
 from decimal import Decimal
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import delete
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.pool import NullPool
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
-from app.core.database import _async_db_url
 from app.models.gift import Gift, GiftPurchase
 from app.models.payment import Payment
 from app.models.rsvp import Rsvp
@@ -37,7 +33,15 @@ requires_db = pytest.mark.skipif(
 
 # ── Autorização (sem banco) ───────────────────────────────────────────────────
 
-@pytest.mark.parametrize("path", ["/api/admin/rsvps", "/api/admin/gifts", "/api/admin/payments"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/admin/rsvps",
+        "/api/admin/gifts",
+        "/api/admin/gift-ledger",
+        "/api/admin/gift-purchases/matches",
+    ],
+)
 async def test_relatorios_exigem_autenticacao(
     client: AsyncClient, admin_env: None, path: str
 ) -> None:
@@ -45,36 +49,15 @@ async def test_relatorios_exigem_autenticacao(
 
 
 # ── Agregação (com banco) ─────────────────────────────────────────────────────
-
-@pytest.fixture
-async def db() -> AsyncIterator[AsyncSession]:
-    """
-    Sessão presa a uma transação externa, revertida ao fim do teste.
-
-    Engine própria com NullPool: o pytest-asyncio cria um event loop por teste e
-    o engine global de app.core.database guardaria conexões de um loop já
-    fechado, quebrando o segundo teste em diante com "Event loop is closed".
-    """
-    test_engine = create_async_engine(_async_db_url(settings.DATABASE_URL), poolclass=NullPool)
-    try:
-        async with test_engine.connect() as connection:
-            transaction = await connection.begin()
-            session = AsyncSession(bind=connection, expire_on_commit=False)
-            try:
-                yield session
-            finally:
-                await session.close()
-                await transaction.rollback()
-    finally:
-        await test_engine.dispose()
-
+#
+# A fixture `db` vive no conftest.py: o teste de fulfillment também precisa dela.
 
 @pytest.fixture
 async def seed(db: AsyncSession) -> dict[str, uuid.UUID]:
     """
-    Cenário mínimo que cobre as três armadilhas do modelo:
-    presente oculto, presente com compra manual + pagamento aprovado, e
-    pagamentos pendente/recusado que não podem entrar no total.
+    Cenário mínimo que cobre as armadilhas do modelo: presente oculto, presente
+    com compra manual (sem pagamento) e compra vinda de pagamento aprovado, mais
+    pagamentos pendente/recusado que não podem entrar no total nem virar compra.
 
     Esvazia `rsvp` antes: o relatório soma a tabela inteira, então qualquer
     confirmação já existente no banco de desenvolvimento entraria na conta e
@@ -89,16 +72,18 @@ async def seed(db: AsyncSession) -> dict[str, uuid.UUID]:
     db.add_all([visivel, oculto, viagem])
     await db.flush()
 
-    # `visivel` tem os dois tipos de registro ao mesmo tempo — é aqui que a
-    # contagem dobraria se os campos fossem somados.
+    pix_aprovado = Payment(
+        gift_id=visivel.id, method="pix", status="approved",
+        amount=Decimal("300.00"), buyer_name="Vinda do pagamento",
+    )
+    cartao_aprovado = Payment(
+        gift_id=viagem.id, method="credit_card", status="approved",
+        amount=Decimal("800.00"), buyer_name="Cartão aprovado",
+    )
     db.add_all(
         [
-            GiftPurchase(gift_id=visivel.id, buyer_name="Compra manual", message=None),
-            GiftPurchase(gift_id=visivel.id, buyer_name="Vinda do pagamento", message=None),
-            Payment(
-                gift_id=visivel.id, method="pix", status="approved",
-                amount=Decimal("300.00"), buyer_name="Vinda do pagamento",
-            ),
+            pix_aprovado,
+            cartao_aprovado,
             Payment(
                 gift_id=visivel.id, method="pix", status="pending",
                 amount=Decimal("300.00"), buyer_name="Ainda não pagou",
@@ -107,9 +92,23 @@ async def seed(db: AsyncSession) -> dict[str, uuid.UUID]:
                 gift_id=viagem.id, method="credit_card", status="rejected",
                 amount=Decimal("800.00"), buyer_name="Cartão recusado",
             ),
-            Payment(
-                gift_id=viagem.id, method="credit_card", status="approved",
-                amount=Decimal("800.00"), buyer_name="Cartão aprovado",
+        ]
+    )
+    # Flush antes das compras: payment_id só existe depois que o id é gerado.
+    await db.flush()
+
+    # `visivel` tem os dois tipos de registro ao mesmo tempo — é aqui que a
+    # contagem dobraria se os campos fossem somados.
+    db.add_all(
+        [
+            GiftPurchase(gift_id=visivel.id, buyer_name="Compra manual", message=None),
+            GiftPurchase(
+                gift_id=visivel.id, buyer_name="Vinda do pagamento", message=None,
+                payment_id=pix_aprovado.id,
+            ),
+            GiftPurchase(
+                gift_id=viagem.id, buyer_name="Cartão aprovado", message=None,
+                payment_id=cartao_aprovado.id,
             ),
         ]
     )
@@ -185,22 +184,101 @@ async def test_compras_e_pagamentos_ficam_em_colunas_separadas(
 async def test_total_aprovado_ignora_pendentes_e_recusados(
     db: AsyncSession, seed: dict[str, uuid.UUID]
 ) -> None:
-    report = await admin_report_service.get_payments_report(db)
+    report = await admin_report_service.get_gift_ledger_report(db)
 
     assert report.summary.approved_amount == 1100.00  # 300 + 800
     assert report.summary.approved_count == 2
     assert report.summary.pending_count == 1
     assert report.summary.rejected_count == 1
-    assert report.summary.total_count == 4
+    assert report.summary.total_payments == 4
+    # A compra manual não tem dinheiro por trás e não pode entrar em nada acima.
+    assert report.summary.purchases_total == 3
 
 
 @requires_db
-async def test_pagamento_traz_o_titulo_do_presente(
+async def test_ledger_traz_o_titulo_do_presente(
     db: AsyncSession, seed: dict[str, uuid.UUID]
 ) -> None:
     """O título vem de join explícito — acessar Payment.gift levantaria MissingGreenlet."""
-    report = await admin_report_service.get_payments_report(db)
+    report = await admin_report_service.get_gift_ledger_report(db)
     titulos = {row.gift_title for row in report.items}
 
     assert "Jogo de panelas" in titulos
     assert "Passeio em Kyoto" in titulos
+
+
+@requires_db
+async def test_pagamento_aprovado_aparece_uma_vez_so(
+    db: AsyncSession, seed: dict[str, uuid.UUID]
+) -> None:
+    """
+    O motivo de existir a tela unificada: antes o mesmo evento saía na aba de
+    pagamentos e na de compras.
+    """
+    report = await admin_report_service.get_gift_ledger_report(db)
+    linhas = [row for row in report.items if row.buyer_name == "Vinda do pagamento"]
+
+    assert len(linhas) == 1
+    linha = linhas[0]
+    assert linha.purchase_id is not None
+    assert linha.payment_id is not None
+    assert linha.status == "approved"
+    assert linha.amount == 300.00
+    assert linha.method == "pix"
+    assert linha.key.startswith("c:")
+
+
+@requires_db
+async def test_compra_sem_pagamento_nao_tem_valor(
+    db: AsyncSession, seed: dict[str, uuid.UUID]
+) -> None:
+    """Linha do endpoint público: existe na lista, mas sem dinheiro atrás."""
+    report = await admin_report_service.get_gift_ledger_report(db)
+    linha = next(row for row in report.items if row.buyer_name == "Compra manual")
+
+    assert linha.status == "no_payment"
+    assert linha.amount is None
+    assert linha.method is None
+    assert linha.payment_id is None
+    assert linha.purchase_id is not None
+
+
+@requires_db
+async def test_pagamento_sem_compra_continua_na_lista(
+    db: AsyncSession, seed: dict[str, uuid.UUID]
+) -> None:
+    """Pendente e recusado nunca viram compra, mas o painel precisa vê-los."""
+    report = await admin_report_service.get_gift_ledger_report(db)
+
+    pendente = next(row for row in report.items if row.buyer_name == "Ainda não pagou")
+    assert pendente.status == "pending"
+    assert pendente.purchase_id is None
+    # Sem compra não há o que vincular a um convidado.
+    assert pendente.guest_id is None
+    assert pendente.key.startswith("p:")
+
+    recusado = next(row for row in report.items if row.buyer_name == "Cartão recusado")
+    assert recusado.status == "rejected"
+    assert recusado.purchase_id is None
+
+
+@requires_db
+async def test_ledger_ordena_do_mais_recente_para_o_mais_antigo(
+    db: AsyncSession, seed: dict[str, uuid.UUID]
+) -> None:
+    """As linhas vêm de duas consultas separadas: a ordem é feita depois, em Python."""
+    report = await admin_report_service.get_gift_ledger_report(db)
+    datas = [row.created_at for row in report.items]
+
+    assert datas == sorted(datas, reverse=True)
+
+
+@requires_db
+async def test_chaves_das_linhas_sao_unicas(
+    db: AsyncSession, seed: dict[str, uuid.UUID]
+) -> None:
+    """`key` é o rowKey da tabela: chave repetida quebraria a renderização."""
+    report = await admin_report_service.get_gift_ledger_report(db)
+    chaves = [row.key for row in report.items]
+
+    assert len(chaves) == len(set(chaves))

@@ -1,6 +1,6 @@
 # Status do Projeto
 
-> Última atualização: 2026-03-12
+> Última atualização: 2026-09-03
 
 ## 📊 Estado Atual: `TODOS OS ÉPICOS COMPLETOS 🎉`
 
@@ -81,6 +81,25 @@ O projeto evoluiu do bootstrap inicial. Épicos 1–4 do site de casamento estã
 - [x] `MessageBoard` — skeletons shimmer durante loading, empty state
 - [x] `src/utils/avatar.ts` — `getInitials` + `getAvatarColor` determinístico
 - [x] Integrado na `HomePage` (substituiu placeholders de Épico 5)
+
+---
+
+### Painel — "Compras e pagamentos" numa aba só
+
+**Concluído em:** 2026-09-03
+
+As abas **Pagamentos** e **Compras** viravam uma. Um pagamento aprovado gera uma
+linha em `gift_purchases`, então o mesmo evento aparecia nas duas sem nada
+indicando que era um só.
+
+- [x] `gift_purchases.payment_id` — FK única e opcional para `payments`, com backfill
+- [x] `_fulfill_gift` grava a FK; a reconciliação deixou de usar a trinca `(gift_id, buyer_name, message)`
+- [x] `GET /api/admin/gift-ledger` substitui `/payments` e `/gift-purchases`
+- [x] `GiftLedgerTable` — uma linha por transação, com valor, status e convidado juntos
+- [x] Abas do painel: de cinco para quatro
+- [x] Testes de relatório e de fulfillment (`RUN_DB_TESTS=1`)
+
+**Detalhes:** `docs/admin-gift-ledger.md`
 
 ---
 

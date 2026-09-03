@@ -45,5 +45,15 @@ class GiftPurchase(UUIDMixin, TimestampMixin, Base):
         nullable=True,
         index=True,
     )
+    # Qual pagamento gerou esta compra. NULL significa que a linha veio do
+    # endpoint público POST /api/gifts/purchase, que não tem dinheiro por trás.
+    # UNIQUE porque um pagamento aprovado gera no máximo uma compra. SET NULL
+    # para não apagar a compra caso o pagamento seja removido.
+    payment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("payments.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+    )
 
     gift: Mapped["Gift"] = relationship("Gift", back_populates="purchases")

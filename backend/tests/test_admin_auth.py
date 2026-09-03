@@ -57,7 +57,16 @@ async def test_sem_configuracao_login_e_relatorios_ficam_fechados(
     assert relatorio.status_code == 401
 
 
-@pytest.mark.parametrize("path", ["/api/admin/me", "/api/admin/rsvps", "/api/admin/gifts", "/api/admin/payments"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/admin/me",
+        "/api/admin/rsvps",
+        "/api/admin/gifts",
+        "/api/admin/gift-ledger",
+        "/api/admin/gift-purchases/matches",
+    ],
+)
 async def test_sem_header_retorna_401_e_nao_422(
     client: AsyncClient, admin_env: None, path: str
 ) -> None:

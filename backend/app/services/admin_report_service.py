@@ -8,8 +8,9 @@ Três armadilhas do modelo de dados estão tratadas aqui:
    por trás. Nunca calcular total como `gift.price * quantidade de compras`.
 
 2. Uma linha de `gift_purchases` nasce do endpoint público OU de `_fulfill_gift`
-   quando um pagamento é aprovado. As duas contagens se sobrepõem e por isso são
-   devolvidas em campos separados — somá-las inflaria o número.
+   quando um pagamento é aprovado. Quem diz qual é qual é a FK
+   `gift_purchases.payment_id`: NULL = veio do endpoint público. O relatório
+   unificado usa essa FK para não listar o mesmo evento duas vezes.
 
 3. `Gift.purchases` e `Payment.gift` são `lazy="select"`: acessá-los dentro de uma
    request async levanta MissingGreenlet em tempo de execução. Por isso todo dado
@@ -28,20 +29,18 @@ from app.models.guest import Guest
 from app.models.payment import Payment
 from app.models.rsvp import Rsvp
 from app.schemas.admin import (
+    AdminGiftLedgerOut,
+    AdminGiftLedgerRow,
     AdminGiftPurchaseRow,
-    AdminGiftPurchasesOut,
     AdminGiftRow,
     AdminGiftsOut,
     AdminGuestRow,
     AdminGuestsOut,
-    AdminPaymentRow,
-    AdminPaymentsOut,
     AdminRsvpRow,
     AdminRsvpsOut,
-    GiftPurchaseSummary,
+    GiftLedgerSummary,
     GiftSummary,
     GuestSummary,
-    PaymentSummary,
     RsvpSummary,
 )
 
@@ -355,32 +354,89 @@ async def get_gifts_report(db: AsyncSession) -> AdminGiftsOut:
     return AdminGiftsOut(summary=summary, items=items)
 
 
-# ── Pagamentos ────────────────────────────────────────────────────────────────
+# ── Compras e pagamentos (relatório unificado) ────────────────────────────────
 
-async def get_payments_report(db: AsyncSession) -> AdminPaymentsOut:
-    """Todas as tentativas de pagamento, mais recentes primeiro, com totais por status."""
-    rows = await db.execute(
-        select(Payment, Gift.title)
-        .join(Gift, Payment.gift_id == Gift.id, isouter=True)
-        .order_by(Payment.created_at.desc())
-    )
+async def get_gift_ledger_report(db: AsyncSession) -> AdminGiftLedgerOut:
+    """
+    Uma linha por transação, mais recentes primeiro.
+
+    Três formatos de linha, todos no mesmo schema:
+
+    - compra com pagamento (`payment_id` preenchido) — o caso normal de um
+      pagamento aprovado: dinheiro e vínculo com convidado na mesma linha;
+    - compra sem pagamento — veio do endpoint público, status `no_payment`,
+      campos financeiros nulos;
+    - pagamento que nunca virou compra — pendente, recusado, expirado: sem
+      `purchase_id`, e por isso sem vínculo possível com um convidado.
+
+    Antes essas linhas viviam em duas telas ("Pagamentos" e "Compras") e um
+    pagamento aprovado aparecia nas duas, sem nada dizendo que era o mesmo
+    evento.
+    """
+    purchase_rows = (
+        await db.execute(
+            select(GiftPurchase, Gift.title, Guest.full_name, Payment)
+            # isouter também no Gift: uma compra de presente apagado ainda é
+            # histórico financeiro e não pode sumir do relatório.
+            .join(Gift, GiftPurchase.gift_id == Gift.id, isouter=True)
+            .outerjoin(Guest, GiftPurchase.guest_id == Guest.id)
+            .outerjoin(Payment, GiftPurchase.payment_id == Payment.id)
+        )
+    ).all()
+
+    orphan_rows = (
+        await db.execute(
+            select(Payment, Gift.title)
+            .join(Gift, Payment.gift_id == Gift.id, isouter=True)
+            .where(
+                ~select(GiftPurchase.id)
+                .where(GiftPurchase.payment_id == Payment.id)
+                .exists()
+            )
+        )
+    ).all()
 
     items = [
-        AdminPaymentRow(
-            id=payment.id,
+        AdminGiftLedgerRow(
+            key=f"c:{purchase.id}",
+            purchase_id=purchase.id,
+            payment_id=payment.id if payment else None,
+            gift_id=purchase.gift_id,
+            gift_title=gift_title,
+            buyer_name=purchase.buyer_name,
+            message=purchase.message,
+            status=payment.status if payment else "no_payment",
+            method=payment.method if payment else None,
+            amount=_to_float(payment.amount) if payment else None,
+            mp_payment_id=payment.mp_payment_id if payment else None,
+            guest_id=purchase.guest_id,
+            guest_full_name=guest_full_name,
+            created_at=purchase.created_at,
+        )
+        for purchase, gift_title, guest_full_name, payment in purchase_rows
+    ] + [
+        AdminGiftLedgerRow(
+            key=f"p:{payment.id}",
+            purchase_id=None,
+            payment_id=payment.id,
             gift_id=payment.gift_id,
             gift_title=gift_title,
-            mp_payment_id=payment.mp_payment_id,
-            method=payment.method,
-            status=payment.status,
-            amount=_to_float(payment.amount),
             buyer_name=payment.buyer_name,
             message=payment.message,
+            status=payment.status,
+            method=payment.method,
+            amount=_to_float(payment.amount),
+            mp_payment_id=payment.mp_payment_id,
+            guest_id=None,
+            guest_full_name=None,
             created_at=payment.created_at,
         )
-        for payment, gift_title in rows.all()
+        for payment, gift_title in orphan_rows
     ]
+    items.sort(key=lambda row: row.created_at, reverse=True)
 
+    # Financeiro direto de `payments`, sem passar pelas linhas acima: assim uma
+    # compra "no_payment" nunca entra na conta.
     totals = await db.execute(
         select(
             Payment.status,
@@ -396,23 +452,28 @@ async def get_payments_report(db: AsyncSession) -> AdminPaymentsOut:
         if payment_status == APPROVED:
             approved_amount = _to_float(amount)
 
-    total_count = sum(counts.values())
+    total_payments = sum(counts.values())
     approved_count = counts.get(APPROVED, 0)
     pending_count = counts.get("pending", 0)
     rejected_count = counts.get("rejected", 0)
 
-    summary = PaymentSummary(
+    linked = sum(1 for purchase, *_ in purchase_rows if purchase.guest_id is not None)
+
+    summary = GiftLedgerSummary(
         approved_amount=approved_amount,
         approved_count=approved_count,
         pending_count=pending_count,
         rejected_count=rejected_count,
-        other_count=total_count - approved_count - pending_count - rejected_count,
-        total_count=total_count,
+        other_count=total_payments - approved_count - pending_count - rejected_count,
+        total_payments=total_payments,
+        purchases_total=len(purchase_rows),
+        linked=linked,
+        unlinked=len(purchase_rows) - linked,
     )
-    return AdminPaymentsOut(summary=summary, items=items)
+    return AdminGiftLedgerOut(summary=summary, items=items)
 
 
-# ── Compras de presentes ───────────────────────────────────────────────────────
+# ── Compra de presente isolada (devolvida pelo PATCH de vínculo) ──────────────
 
 def _gift_purchase_row(
     purchase: GiftPurchase, gift_title: str | None, guest_full_name: str | None
@@ -429,36 +490,12 @@ def _gift_purchase_row(
     )
 
 
-async def get_gift_purchases_report(db: AsyncSession) -> AdminGiftPurchasesOut:
-    """Todas as compras, mais recentes primeiro, com o presente e o convidado vinculado."""
-    result = await db.execute(
-        select(GiftPurchase, Gift.title, Guest.full_name)
-        .join(Gift, GiftPurchase.gift_id == Gift.id)
-        .outerjoin(Guest, GiftPurchase.guest_id == Guest.id)
-        .order_by(GiftPurchase.created_at.desc())
-    )
-    rows = result.all()
-
-    items = [
-        _gift_purchase_row(purchase, gift_title, guest_full_name)
-        for purchase, gift_title, guest_full_name in rows
-    ]
-    linked = sum(1 for purchase, *_ in rows if purchase.guest_id is not None)
-
-    summary = GiftPurchaseSummary(
-        total=len(items),
-        linked=linked,
-        unlinked=len(items) - linked,
-    )
-    return AdminGiftPurchasesOut(summary=summary, items=items)
-
-
 async def get_gift_purchase_row(db: AsyncSession, purchase_id: uuid.UUID) -> AdminGiftPurchaseRow:
-    """Uma compra só, no mesmo formato da listagem — devolvida pelo PATCH de vínculo."""
+    """Uma compra só — devolvida pelo PATCH de vínculo, para atualizar a linha na tela."""
     row = (
         await db.execute(
             select(GiftPurchase, Gift.title, Guest.full_name)
-            .join(Gift, GiftPurchase.gift_id == Gift.id)
+            .join(Gift, GiftPurchase.gift_id == Gift.id, isouter=True)
             .outerjoin(Guest, GiftPurchase.guest_id == Guest.id)
             .where(GiftPurchase.id == purchase_id)
         )

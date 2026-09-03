@@ -11,9 +11,9 @@
 
 import { ApiError, api } from '@/lib/api'
 import type {
+  AdminGiftLedgerReport,
   AdminGiftPurchaseMatchesReport,
   AdminGiftPurchaseRow,
-  AdminGiftPurchasesReport,
   AdminGiftPurchaseUpdate,
   AdminGiftsReport,
   AdminGuestCreate,
@@ -21,7 +21,6 @@ import type {
   AdminGuestsReport,
   AdminGuestUpdate,
   AdminMe,
-  AdminPaymentsReport,
   AdminRsvpMatchesReport,
   AdminRsvpsReport,
   AdminToken,
@@ -118,10 +117,8 @@ export const getAdminRsvps = () => adminApi.get<AdminRsvpsReport>('/api/admin/rs
 
 export const getAdminGifts = () => adminApi.get<AdminGiftsReport>('/api/admin/gifts')
 
-export const getAdminPayments = () => adminApi.get<AdminPaymentsReport>('/api/admin/payments')
-
-export const getAdminGiftPurchases = () =>
-  adminApi.get<AdminGiftPurchasesReport>('/api/admin/gift-purchases')
+export const getAdminGiftLedger = () =>
+  adminApi.get<AdminGiftLedgerReport>('/api/admin/gift-ledger')
 
 export const getAdminGiftPurchaseMatches = () =>
   adminApi.get<AdminGiftPurchaseMatchesReport>('/api/admin/gift-purchases/matches')

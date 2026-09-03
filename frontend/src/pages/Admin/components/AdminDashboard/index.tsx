@@ -3,17 +3,15 @@ import { Alert, Button, Tabs } from 'antd'
 
 import { useAdminLogout } from '@/hooks/useAdminAuth'
 import {
-  useAdminGiftPurchases,
+  useAdminGiftLedger,
   useAdminGifts,
   useAdminGuests,
-  useAdminPayments,
   useAdminRsvps,
   useRefreshAdminReports,
 } from '@/hooks/useAdminReports'
-import { GiftPurchasesTable } from '../GiftPurchasesTable'
+import { GiftLedgerTable } from '../GiftLedgerTable'
 import { GiftsTable } from '../GiftsTable'
 import { GuestsTable } from '../GuestsTable'
-import { PaymentsTable } from '../PaymentsTable'
 import { RsvpTable } from '../RsvpTable'
 import { SummaryCards } from '../SummaryCards'
 import * as S from './styles'
@@ -25,18 +23,13 @@ export function AdminDashboard() {
   const guests = useAdminGuests()
   const rsvps = useAdminRsvps()
   const gifts = useAdminGifts()
-  const payments = useAdminPayments()
-  const giftPurchases = useAdminGiftPurchases()
+  const ledger = useAdminGiftLedger()
 
   const refresh = useRefreshAdminReports()
   const logout = useAdminLogout()
 
   const isLoading =
-    guests.isLoading ||
-    rsvps.isLoading ||
-    gifts.isLoading ||
-    payments.isLoading ||
-    giftPurchases.isLoading
+    guests.isLoading || rsvps.isLoading || gifts.isLoading || ledger.isLoading
   const [showColdStartHint, setShowColdStartHint] = useState(false)
 
   useEffect(() => {
@@ -51,8 +44,7 @@ export function AdminDashboard() {
     return () => window.clearTimeout(timer)
   }, [isLoading])
 
-  const error =
-    guests.error ?? rsvps.error ?? gifts.error ?? payments.error ?? giftPurchases.error
+  const error = guests.error ?? rsvps.error ?? gifts.error ?? ledger.error
 
   return (
     <S.Page>
@@ -85,7 +77,7 @@ export function AdminDashboard() {
 
       <SummaryCards
         rsvp={rsvps.data?.summary}
-        payments={payments.data?.summary}
+        ledger={ledger.data?.summary}
         loading={isLoading}
       />
 
@@ -116,20 +108,10 @@ export function AdminDashboard() {
             children: <GiftsTable rows={gifts.data?.items ?? []} loading={gifts.isLoading} />,
           },
           {
-            key: 'payments',
-            label: 'Pagamentos',
+            key: 'transactions',
+            label: 'Compras e pagamentos',
             children: (
-              <PaymentsTable rows={payments.data?.items ?? []} loading={payments.isLoading} />
-            ),
-          },
-          {
-            key: 'purchases',
-            label: 'Compras',
-            children: (
-              <GiftPurchasesTable
-                rows={giftPurchases.data?.items ?? []}
-                loading={giftPurchases.isLoading}
-              />
+              <GiftLedgerTable rows={ledger.data?.items ?? []} loading={ledger.isLoading} />
             ),
           },
         ]}

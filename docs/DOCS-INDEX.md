@@ -57,6 +57,7 @@
 
 ## 📌 Outros Documentos
 
+- `admin-gift-ledger.md` — Aba "Compras e pagamentos" do painel e a FK que a viabiliza
 - `STATUS.md` — Checklist geral de progresso
 - `ROADMAP.md` — Visão completa, timeline e prioridades
 - `../README.md` — Quick start e arquitetura
