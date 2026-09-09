@@ -1,7 +1,12 @@
 import { useState } from 'react'
-import { Badge, Button, Table, Tag, Tooltip } from 'antd'
+import { App, Badge, Button, Space, Table, Tag, Tooltip } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
+import {
+  giftLedgerPaymentErrorMessage,
+  useDeletePendingPayment,
+  useReconcilePayment,
+} from '@/hooks/useGiftLedgerPaymentMutations'
 import type { AdminGiftLedgerRow, LedgerStatus } from '@/types/admin'
 import type { LedgerMethod } from '@/types/payment'
 import { formatAmountCsv, formatBRL, formatDateTime } from '@/utils/format'
@@ -18,7 +23,7 @@ interface GiftLedgerTableProps {
   loading: boolean
 }
 
-const columns: ColumnsType<AdminGiftLedgerRow> = [
+const baseColumns: ColumnsType<AdminGiftLedgerRow> = [
   {
     title: 'Data',
     dataIndex: 'created_at',
@@ -112,6 +117,10 @@ export function GiftLedgerTable({ rows, loading }: GiftLedgerTableProps) {
   const [editing, setEditing] = useState<AdminGiftLedgerRow | null>(null)
   const [transactionOpen, setTransactionOpen] = useState(false)
 
+  const { message, modal } = App.useApp()
+  const reconcile = useReconcilePayment()
+  const deletePayment = useDeletePendingPayment()
+
   // `null` abre em modo de criação, igual ao GuestsTable.
   const openTransaction = (row: AdminGiftLedgerRow | null) => {
     setEditing(row)
@@ -123,6 +132,80 @@ export function GiftLedgerTable({ rows, loading }: GiftLedgerTableProps) {
   const pendingLinks = rows.filter(
     (row) => row.purchase_id !== null && row.guest_id === null,
   ).length
+
+  // Reconsulta o Mercado Pago pelo mp_payment_id — corrige Pix pago que ficou
+  // preso em "pendente" porque o webhook se perdeu ou o comprador nunca voltou
+  // ao checkout para o polling reconciliar sozinho.
+  const handleReconcile = (row: AdminGiftLedgerRow) => {
+    if (!row.payment_id) return
+    reconcile.mutate(row.payment_id, {
+      onSuccess: () => message.success('Pagamento sincronizado com o Mercado Pago.'),
+      onError: (error) => message.error(giftLedgerPaymentErrorMessage(error)),
+    })
+  }
+
+  // Só pagamento pendente que nunca virou compra — aprovado é fato consumado
+  // no Mercado Pago e apagar aqui não desfaz nada lá.
+  const handleDeletePayment = (row: AdminGiftLedgerRow) => {
+    if (!row.payment_id) return
+    modal.confirm({
+      title: `Remover o pagamento pendente de ${row.buyer_name}?`,
+      content: 'Não dá para desfazer.',
+      okText: 'Remover',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancelar',
+      onOk: async () => {
+        try {
+          await deletePayment.mutateAsync(row.payment_id as string)
+          message.success('Pagamento removido.')
+        } catch (error) {
+          message.error(giftLedgerPaymentErrorMessage(error))
+          throw error
+        }
+      },
+    })
+  }
+
+  const columns: ColumnsType<AdminGiftLedgerRow> = [
+    ...baseColumns,
+    {
+      title: 'Ações',
+      key: 'actions',
+      render: (_, row) => {
+        // Lançamento manual já se edita e apaga pelo clique na linha.
+        if (row.is_manual || !row.payment_id) return null
+
+        const canReconcile = row.mp_payment_id !== null
+        const canDelete = row.status === 'pending' && row.purchase_id === null
+
+        if (!canReconcile && !canDelete) return null
+
+        return (
+          <Space onClick={(event) => event.stopPropagation()}>
+            {canReconcile && (
+              <Button
+                size="small"
+                loading={reconcile.isPending && reconcile.variables === row.payment_id}
+                onClick={() => handleReconcile(row)}
+              >
+                Sincronizar
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                size="small"
+                danger
+                loading={deletePayment.isPending && deletePayment.variables === row.payment_id}
+                onClick={() => handleDeletePayment(row)}
+              >
+                Remover
+              </Button>
+            )}
+          </Space>
+        )
+      },
+    },
+  ]
 
   return (
     <S.Wrapper>

@@ -136,3 +136,9 @@ export const updateManualTransaction = (purchaseId: string, payload: AdminManual
 
 export const deleteManualTransaction = (purchaseId: string) =>
   adminApi.del<void>(`/api/admin/manual-transactions/${purchaseId}`)
+
+export const reconcilePayment = (paymentId: string) =>
+  adminApi.post<AdminGiftLedgerRow>(`/api/admin/payments/${paymentId}/reconcile`, null)
+
+export const deletePendingPayment = (paymentId: string) =>
+  adminApi.del<void>(`/api/admin/payments/${paymentId}`)

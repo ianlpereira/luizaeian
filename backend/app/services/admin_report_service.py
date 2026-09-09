@@ -419,6 +419,55 @@ async def get_gift_ledger_row(db: AsyncSession, purchase_id: uuid.UUID) -> Admin
     return _ledger_purchase_row(purchase, gift_title, guest_full_name, payment)
 
 
+def _ledger_orphan_row(payment: Payment, gift_title: str | None) -> AdminGiftLedgerRow:
+    return AdminGiftLedgerRow(
+        key=f"p:{payment.id}",
+        purchase_id=None,
+        payment_id=payment.id,
+        gift_id=payment.gift_id,
+        gift_title=gift_title,
+        buyer_name=payment.buyer_name,
+        message=payment.message,
+        status=cast(LedgerStatusLiteral, payment.status),
+        method=cast(LedgerMethod, payment.method),
+        amount=_to_float(payment.amount),
+        mp_payment_id=payment.mp_payment_id,
+        guest_id=None,
+        guest_full_name=None,
+        created_at=payment.created_at,
+        is_manual=payment.method in MANUAL_METHODS,
+    )
+
+
+async def get_gift_ledger_row_for_payment(
+    db: AsyncSession, payment_id: uuid.UUID
+) -> AdminGiftLedgerRow:
+    """
+    Uma linha pelo `payment_id` — usada depois de reconciliar com o Mercado
+    Pago, quando a chave pode ter virado "c:<purchase_id>" no meio do caminho
+    (reconciliação criou a compra) ou pode ter continuado órfã.
+    """
+    purchase = await db.scalar(
+        select(GiftPurchase).where(GiftPurchase.payment_id == payment_id)
+    )
+    if purchase is not None:
+        return await get_gift_ledger_row(db, purchase.id)
+
+    row = (
+        await db.execute(
+            select(Payment, Gift.title)
+            .join(Gift, Payment.gift_id == Gift.id, isouter=True)
+            .where(Payment.id == payment_id)
+        )
+    ).first()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pagamento não encontrado."
+        )
+    payment, gift_title = row
+    return _ledger_orphan_row(payment, gift_title)
+
+
 async def get_gift_ledger_report(db: AsyncSession) -> AdminGiftLedgerOut:
     """
     Uma linha por transação, mais recentes primeiro.
@@ -453,26 +502,7 @@ async def get_gift_ledger_report(db: AsyncSession) -> AdminGiftLedgerOut:
     items = [
         _ledger_purchase_row(purchase, gift_title, guest_full_name, payment)
         for purchase, gift_title, guest_full_name, payment in purchase_rows
-    ] + [
-        AdminGiftLedgerRow(
-            key=f"p:{payment.id}",
-            purchase_id=None,
-            payment_id=payment.id,
-            gift_id=payment.gift_id,
-            gift_title=gift_title,
-            buyer_name=payment.buyer_name,
-            message=payment.message,
-            status=cast(LedgerStatusLiteral, payment.status),
-            method=cast(LedgerMethod, payment.method),
-            amount=_to_float(payment.amount),
-            mp_payment_id=payment.mp_payment_id,
-            guest_id=None,
-            guest_full_name=None,
-            created_at=payment.created_at,
-            is_manual=payment.method in MANUAL_METHODS,
-        )
-        for payment, gift_title in orphan_rows
-    ]
+    ] + [_ledger_orphan_row(payment, gift_title) for payment, gift_title in orphan_rows]
     items.sort(key=lambda row: row.created_at, reverse=True)
 
     # Financeiro direto de `payments`, sem passar pelas linhas acima: assim uma

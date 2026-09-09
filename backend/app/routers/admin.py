@@ -41,6 +41,7 @@ from app.schemas.admin import (
 )
 from app.services import (
     admin_report_service,
+    gift_ledger_service,
     gift_purchase_service,
     guest_service,
     manual_transaction_service,
@@ -220,6 +221,27 @@ async def delete_manual_transaction(
 ) -> None:
     """Apaga o lançamento inteiro — a compra e o pagamento que a acompanha."""
     await manual_transaction_service.delete_manual_transaction(db, purchase_id)
+
+
+@router.post("/payments/{payment_id}/reconcile", response_model=AdminGiftLedgerRow)
+async def reconcile_payment(
+    payment_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> AdminGiftLedgerRow:
+    """Reconsulta o Mercado Pago e sincroniza o status local — corrige Pix que ficou preso."""
+    await gift_ledger_service.reconcile_payment(db, payment_id)
+    return await admin_report_service.get_gift_ledger_row_for_payment(db, payment_id)
+
+
+@router.delete("/payments/{payment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_pending_payment(
+    payment_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: str = Depends(get_current_admin),
+) -> None:
+    """Apaga um pagamento do Mercado Pago ainda pendente que nunca virou compra."""
+    await gift_ledger_service.delete_orphan_payment(db, payment_id)
 
 
 @router.patch("/gift-purchases/{purchase_id}", response_model=AdminGiftPurchaseRow)

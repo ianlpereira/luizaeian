@@ -117,25 +117,40 @@ requisição anônima válida. Ficam em `ManualMethod`, e o relatório usa a uni
 `LedgerMethod`. `payments.method` é `String(20)` sem CHECK, então nada disso
 precisou de migration.
 
-### Só o que foi lançado à mão é editável
+### Só o que foi lançado à mão é editável — o resto sincroniza ou apaga se pendente
 
 `AdminGiftLedgerRow.is_manual` diz se a linha nasceu aqui — o backend calcula
 comparando o método com `MANUAL_METHODS`. Na tabela, só essas linhas respondem
 ao clique, e ganham uma etiqueta "manual" na coluna Método.
 
-O serviço recusa com 422 qualquer edição ou remoção de linha do Mercado Pago:
-ela espelha um sistema externo, e mexer nela aqui faria o painel divergir da
-verdade que está lá. Compra do endpoint público também não é editável — não há
-valor a corrigir, e o vínculo com convidado já tem a tela de conciliação.
+O serviço recusa com 422 qualquer edição livre de linha do Mercado Pago: ela
+espelha um sistema externo, e sobrescrever status/valor à mão aqui faria o
+painel divergir da verdade que está lá. Compra do endpoint público também não
+é editável — não há valor a corrigir, e o vínculo com convidado já tem a tela
+de conciliação.
 
-Remover apaga o par inteiro: deixar o pagamento órfão o traria de volta ao
-relatório como linha sem compra.
+Em vez de editar, uma linha do Mercado Pago ganha duas ações na coluna Ações:
+
+- **Sincronizar** — reconsulta o pagamento direto no MP pelo `mp_payment_id` e
+  aplica o mesmo caminho do polling do checkout
+  (`payment_service.get_payment_status`): atualiza o status e, se aprovado,
+  registra a compra que ainda não existir. É o jeito de destravar um Pix que
+  foi pago mas ficou "pendente" no painel — webhook perdido, ou o comprador
+  nunca voltou ao checkout para o polling reconciliar sozinho.
+- **Remover** — só aparece para pagamento **pendente** que nunca virou compra
+  (linha órfã, `key` no formato `p:<payment_id>`). Aprovado, recusado,
+  cancelado ou expirado já são fato consumado do Mercado Pago e ficam.
+
+Remover um lançamento manual apaga o par inteiro: deixar o pagamento órfão o
+traria de volta ao relatório como linha sem compra.
 
 | Método | Rota | Devolve |
 |---|---|---|
 | POST | `/api/admin/manual-transactions` | `AdminGiftLedgerRow`, 201 |
 | PATCH | `/api/admin/manual-transactions/{purchase_id}` | `AdminGiftLedgerRow` |
 | DELETE | `/api/admin/manual-transactions/{purchase_id}` | 204 |
+| POST | `/api/admin/payments/{payment_id}/reconcile` | `AdminGiftLedgerRow` |
+| DELETE | `/api/admin/payments/{payment_id}` | 204 — só se `status == "pending"` |
 
 ---
 
@@ -149,9 +164,11 @@ relatório como linha sem compra.
   para criar, "Remover" com `modal.confirm`).
 - `pages/Admin/components/GiftPicker/` — seleção opcional de presente, irmão do
   `GuestPicker`.
-- `hooks/useManualTransactionMutations.ts` — as três escritas. Invalidam
-  `['admin']` inteiro: um lançamento mexe no relatório, nos totais por presente
-  e nas sugestões de conciliação.
+- `hooks/useManualTransactionMutations.ts` — as três escritas de lançamento
+  manual. Invalidam `['admin']` inteiro: um lançamento mexe no relatório, nos
+  totais por presente e nas sugestões de conciliação.
+- `hooks/useGiftLedgerPaymentMutations.ts` — sincronizar e apagar pagamento do
+  Mercado Pago, mesmo desenho, mesma invalidação.
 - `pages/Admin/paymentLabels.ts` — rótulos pt-BR de status e método, no mesmo
   espírito de `guestLabels.ts`.
 - `hooks/useAdminReports.ts` — `useAdminGiftLedger`, chave
